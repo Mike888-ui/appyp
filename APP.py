@@ -59,7 +59,7 @@ st.markdown("<h1 style='text-align:center;color:#154278;'>百家樂 結果輸入
 left, right = st.columns([2,3])
 
 with left:
-    st.markdown("### 新增結果")
+    st.markdown("### 當局結果")
 
     # 結果按鍵
     btn_cols = st.columns(4)
