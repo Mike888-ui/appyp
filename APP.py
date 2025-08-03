@@ -100,15 +100,15 @@ with left:
             v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
             if len(st.session_state.p_list) < 4:
                 st.session_state.p_list.append(v_num)
-            st.experimental_rerun()
+            st.rerun()
     del_col, res_col = st.columns([1, 1])
     if del_col.button("刪除", key='player_del'):
         if st.session_state.p_list:
             st.session_state.p_list.pop()
-        st.experimental_rerun()
+        st.rerun()
     if res_col.button("重製", key='player_reset'):
         st.session_state.p_list = []
-        st.experimental_rerun()
+        st.rerun()
 
     # ------ 莊家 ------
     st.markdown("### 莊家點數：3張牌 (1~13/JQK)")
@@ -125,15 +125,15 @@ with left:
             v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
             if len(st.session_state.b_list) < 4:
                 st.session_state.b_list.append(v_num)
-            st.experimental_rerun()
+            st.rerun()
     del_col, res_col = st.columns([1, 1])
     if del_col.button("刪除", key='banker_del'):
         if st.session_state.b_list:
             st.session_state.b_list.pop()
-        st.experimental_rerun()
+        st.rerun()
     if res_col.button("重製", key='banker_reset'):
         st.session_state.b_list = []
-        st.experimental_rerun()
+        st.rerun()
 
     # ------ 剩餘牌池 ------
     deck_show = deck_str(update_deck(st.session_state.history, st.session_state.p_list, st.session_state.b_list))
@@ -208,12 +208,12 @@ if 比對:
     st.session_state.round_log += msg
     st.session_state.p_list = []
     st.session_state.b_list = []
-    st.experimental_rerun()
+    st.rerun()
 
 if 重設牌池:
     st.session_state.p_list = []
     st.session_state.b_list = []
-    st.experimental_rerun()
+    st.rerun()
 
 if 儲存:
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
