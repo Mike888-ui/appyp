@@ -3,7 +3,7 @@ import gspread
 from collections import Counter
 
 # Google Sheets 設定
-SHEET_ID = '你的 Google Sheet ID'  # 例如 '1NxICz6N6lsvy1OBkvh1BIk-nLVgHoV3tLh9EUnN3kjc'
+SHEET_ID = '你的 Google Sheet ID:https://docs.google.com/spreadsheets/d/1R2eGuVxmgHRIIfmjoY49wYHk9OutAt8aTxiY2VhNRgg/edit?gid=0#gid=0
 COLUMNS = [
     'player', 'player_cards',
     'banker', 'banker_cards',
@@ -59,7 +59,7 @@ st.markdown("<h1 style='text-align:center;color:#154278;'>百家樂 結果輸入
 if 'round_log' not in st.session_state:
     st.session_state.round_log = ""
 if 'compare_result' not in st.session_state:
-    st.rerun()
+    st.session_state.compare_result = {}
 
 left, right = st.columns([2,3])
 
@@ -105,11 +105,11 @@ with left:
         st.rerun()
     if btn2[1].button('重設牌池', use_container_width=True):
         st.session_state.round_log = ""
+        st.session_state.compare_result = {}
         st.rerun()
 
     st.markdown("---")
     if st.button('儲存牌局', use_container_width=True):
-        # 直接在雲端表格，不需要本地excel儲存
         st.success(f"所有紀錄都自動同步到 Google Sheets，不需手動儲存！")
 
 with right:
