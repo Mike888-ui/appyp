@@ -139,20 +139,20 @@ with left:
         st.success(f"已將本次紀錄存為：{excel_out}")
 
 with right:
-    # 預測比對顯示
+    # 比對顯示
     def show_compare():
-        st.markdown("#### 比對預測(3局)：")
+        st.markdown("#### 比對(3局)：")
         pred, rate = ai_predict_next_adviceN_only(CSV_FILE, N=3)
         st.markdown(f"<div style='color:blue;'>{pred}</div>", unsafe_allow_html=True)
-        st.markdown("#### 比對預測(6局)：")
+        st.markdown("#### 比對(6局)：")
         auto_pred, auto_rate = ai_predict_next_adviceN_only(CSV_FILE, N=6)
         st.markdown(f"<div style='color:blue;'>{auto_pred}</div>", unsafe_allow_html=True)
-        st.markdown("#### 比對正確率：")
+        st.markdown("#### ---：")
         st.markdown(f"<div style='color:blue;'>{auto_rate}</div>", unsafe_allow_html=True)
     show_compare()
 
-    # 記錄區
-    st.markdown("#### 記錄區：")
+    # 牌局記錄區
+    st.markdown("#### 牌局記錄區：")
     st.text_area('', st.session_state.round_log, height=300, key='round_log_show', disabled=True)
 
     # 完整欄位紀錄表格
