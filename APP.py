@@ -153,4 +153,3 @@ with right:
     # 牌局記錄區（只顯示LOG，不顯示表格）
     st.markdown("#### 牌局記錄區：")
     st.text_area('', st.session_state.round_log, height=300, key='round_log_show', disabled=True)
-s
