@@ -23,6 +23,8 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 if 'round_log' not in st.session_state:
     st.session_state.round_log = ""
+if 'compare_result' not in st.session_state:
+    st.session_state.compare_result = {}
 
 def write_to_csv(record):
     with open(CSV_FILE, 'a', encoding='utf-8-sig', newline='') as f:
@@ -114,21 +116,26 @@ with left:
     st.markdown("---")
     btn2 = st.columns(2)
     if btn2[0].button('比對', use_container_width=True):
-        # 觸發預測更新
-        st.session_state['do_compare'] = True
+        # 每次按都即時讀取CSV做比對
+        pred3, rate3 = ai_predict_next_adviceN_only(CSV_FILE, N=3)
+        pred6, rate6 = ai_predict_next_adviceN_only(CSV_FILE, N=6)
+        st.session_state.compare_result = {
+            'pred3': pred3, 'rate3': rate3,
+            'pred6': pred6, 'rate6': rate6
+        }
         st.rerun()
     if btn2[1].button('重設牌池', use_container_width=True):
-        # 只是清除全部暫存資料（或可延伸為重設欄位）
         st.session_state.round_log = ""
+        st.session_state.compare_result = {}
         if os.path.exists(CSV_FILE):
             df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-            df = df.iloc[0:0, :]  # 清空但保留欄位
+            df = df.iloc[0:0, :]
             df.to_csv(CSV_FILE, encoding='utf-8-sig', index=False)
         st.rerun()
 
-    # 匯出按鈕
+    # 儲存牌局
     st.markdown("---")
-    if st.button('匯出Excel', use_container_width=True):
+    if st.button('儲存牌局', use_container_width=True):
         df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
         sheetname = f'牌局記錄{pd.Timestamp.now().strftime("%m%d_%H%M%S")}'
         excel_out = CSV_FILE.replace('.csv', '.xlsx')
@@ -139,26 +146,13 @@ with left:
         st.success(f"已將本次紀錄存為：{excel_out}")
 
 with right:
-    # 比對顯示
-    def show_compare():
-        st.markdown("#### 比對(3局)：")
-        pred, rate = ai_predict_next_adviceN_only(CSV_FILE, N=3)
-        st.markdown(f"<div style='color:blue;'>{pred}</div>", unsafe_allow_html=True)
-        st.markdown("#### 比對(6局)：")
-        auto_pred, auto_rate = ai_predict_next_adviceN_only(CSV_FILE, N=6)
-        st.markdown(f"<div style='color:blue;'>{auto_pred}</div>", unsafe_allow_html=True)
-        st.markdown("#### ---：")
-        st.markdown(f"<div style='color:blue;'>{auto_rate}</div>", unsafe_allow_html=True)
-    show_compare()
+    # 比對結果顯示區（無任何表格）
+    st.markdown("#### 比對預測")
+    compare_result = st.session_state.get('compare_result', {})
+    st.markdown(f"**比對(3局)：** <span style='color:blue;'>{compare_result.get('pred3', '')}</span>", unsafe_allow_html=True)
+    st.markdown(f"**比對(6局)：** <span style='color:blue;'>{compare_result.get('pred6', '')}</span>", unsafe_allow_html=True)
+    st.markdown(f"**正確率：** <span style='color:blue;'>{compare_result.get('rate6', '')}</span>", unsafe_allow_html=True)
 
-    # 牌局記錄區
+    # 牌局記錄區（只顯示LOG，不顯示表格）
     st.markdown("#### 牌局記錄區：")
     st.text_area('', st.session_state.round_log, height=300, key='round_log_show', disabled=True)
-
-    # 完整欄位紀錄表格
-    try:
-        df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-        st.markdown("---")
-        st.dataframe(df.tail(30), use_container_width=True)
-    except:
-        st.warning('目前無紀錄資料')
