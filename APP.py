@@ -93,20 +93,23 @@ with left:
     with col2:
         st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.p_list)}</span>", unsafe_allow_html=True)
 
-    rows = [list(map(str,range(1,11))) + ['J','Q','K']]
-    btn_cols = st.columns(13)
-    for i, v in enumerate(rows[0]):
-        if btn_cols[i].button(v, key=f'player_card_{v}', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.p_list) < 4:
-                st.session_state.p_list.append(v_num)
-            st.rerun()
-    del_col, res_col = st.columns([1, 1])
-    if del_col.button("刪除", key='player_del'):
+    # --- 數字按鈕一排7顆 ---
+    card_labels = [str(i) for i in range(1, 11)] + ['J', 'Q', 'K']
+    card_rows = [card_labels[i:i+7] for i in range(0, len(card_labels), 7)]
+    for row in card_rows:
+        cols = st.columns(len(row))
+        for i, v in enumerate(row):
+            if cols[i].button(v, key=f'player_card_{v}', use_container_width=True):
+                v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+                if len(st.session_state.p_list) < 4:
+                    st.session_state.p_list.append(v_num)
+                st.rerun()
+    op_cols = st.columns(2)
+    if op_cols[0].button("刪除", key='player_del', use_container_width=True):
         if st.session_state.p_list:
             st.session_state.p_list.pop()
         st.rerun()
-    if res_col.button("重製", key='player_reset'):
+    if op_cols[1].button("重製", key='player_reset', use_container_width=True):
         st.session_state.p_list = []
         st.rerun()
 
@@ -118,20 +121,21 @@ with left:
     with col2:
         st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.b_list)}</span>", unsafe_allow_html=True)
 
-    rows = [list(map(str,range(1,11))) + ['J','Q','K']]
-    btn_cols = st.columns(13)
-    for i, v in enumerate(rows[0]):
-        if btn_cols[i].button(v, key=f'banker_card_{v}', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.b_list) < 4:
-                st.session_state.b_list.append(v_num)
-            st.rerun()
-    del_col, res_col = st.columns([1, 1])
-    if del_col.button("刪除", key='banker_del'):
+    card_rows = [card_labels[i:i+7] for i in range(0, len(card_labels), 7)]
+    for row in card_rows:
+        cols = st.columns(len(row))
+        for i, v in enumerate(row):
+            if cols[i].button(v, key=f'banker_card_{v}', use_container_width=True):
+                v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+                if len(st.session_state.b_list) < 4:
+                    st.session_state.b_list.append(v_num)
+                st.rerun()
+    op_cols = st.columns(2)
+    if op_cols[0].button("刪除", key='banker_del', use_container_width=True):
         if st.session_state.b_list:
             st.session_state.b_list.pop()
         st.rerun()
-    if res_col.button("重製", key='banker_reset'):
+    if op_cols[1].button("重製", key='banker_reset', use_container_width=True):
         st.session_state.b_list = []
         st.rerun()
 
@@ -224,5 +228,3 @@ if 儲存:
     with pd.ExcelWriter(excel_out, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name=sheetname, index=False)
     st.success(f"已將本次紀錄存為：{excel_out}")
-
-
