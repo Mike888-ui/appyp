@@ -124,12 +124,11 @@ with left:
             'pred6': pred6, 'rate6': rate6
         }
         st.rerun()
-if btn2[1].button('重設牌池', use_container_width=True):
-    st.session_state.round_log = ""
-    st.session_state.compare_result = {}
-    # 不要清空 CSV 檔案！
-    st.rerun()
-
+    if btn2[1].button('重設牌池', use_container_width=True):
+        st.session_state.round_log = ""
+        st.session_state.compare_result = {}
+        # 不要清空 CSV 檔案！
+        st.rerun()
 
     # 儲存牌局
     st.markdown("---")
@@ -154,3 +153,4 @@ with right:
     # 牌局記錄區（只顯示LOG，不顯示表格）
     st.markdown("#### 牌局記錄區：")
     st.text_area('', st.session_state.round_log, height=300, key='round_log_show', disabled=True)
+s
