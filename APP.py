@@ -104,7 +104,7 @@ with left:
         }
         st.rerun()
     if btn2[1].button('重設牌池', use_container_width=True):
-        st.session_state.round_log = "
+        st.session_state.round_log = ""
         st.rerun()
 
     st.markdown("---")
