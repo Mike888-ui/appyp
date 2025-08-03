@@ -124,14 +124,12 @@ with left:
             'pred6': pred6, 'rate6': rate6
         }
         st.rerun()
-    if btn2[1].button('重設牌池', use_container_width=True):
-        st.session_state.round_log = ""
-        st.session_state.compare_result = {}
-        if os.path.exists(CSV_FILE):
-            df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-            df = df.iloc[0:0, :]
-            df.to_csv(CSV_FILE, encoding='utf-8-sig', index=False)
-        st.rerun()
+if btn2[1].button('重設牌池', use_container_width=True):
+    st.session_state.round_log = ""
+    st.session_state.compare_result = {}
+    # 不要清空 CSV 檔案！
+    st.rerun()
+
 
     # 儲存牌局
     st.markdown("---")
