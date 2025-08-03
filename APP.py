@@ -4,7 +4,6 @@ import os
 import csv
 from collections import Counter
 
-# ---- 牌型/資料結構 ----
 NUM_TO_FACE = {11: 'J', 12: 'Q', 13: 'K'}
 FACE_TO_NUM = {'J': 11, 'Q': 12, 'K': 13}
 CSV_FILE = 'ai_train_history.csv'
@@ -83,6 +82,49 @@ st.markdown("<h1 style='text-align:center;color:#154278;'>百家樂 比對資料
 
 left, right = st.columns([3, 4])
 
+def card_keyboard(side):
+    # 第一排 1 2 3 4
+    row1 = ['1', '2', '3', '4']
+    cols1 = st.columns(4)
+    for i, v in enumerate(row1):
+        if cols1[i].button(v, key=f'{side}_card_{v}', use_container_width=True):
+            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+            if len(st.session_state[f'{side}_list']) < 4:
+                st.session_state[f'{side}_list'].append(v_num)
+            st.rerun()
+    # 第二排 5 6 7 8
+    row2 = ['5', '6', '7', '8']
+    cols2 = st.columns(4)
+    for i, v in enumerate(row2):
+        if cols2[i].button(v, key=f'{side}_card_{v}_2', use_container_width=True):
+            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+            if len(st.session_state[f'{side}_list']) < 4:
+                st.session_state[f'{side}_list'].append(v_num)
+            st.rerun()
+    # 第三排 9 10 J Q
+    row3 = ['9', '10', 'J', 'Q']
+    cols3 = st.columns(4)
+    for i, v in enumerate(row3):
+        if cols3[i].button(v, key=f'{side}_card_{v}_3', use_container_width=True):
+            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+            if len(st.session_state[f'{side}_list']) < 4:
+                st.session_state[f'{side}_list'].append(v_num)
+            st.rerun()
+    # 第四排 K 刪除 重製
+    row4 = ['K', '刪除', '重製']
+    cols4 = st.columns(3)
+    if cols4[0].button('K', key=f'{side}_card_K_4', use_container_width=True):
+        if len(st.session_state[f'{side}_list']) < 4:
+            st.session_state[f'{side}_list'].append(13)
+        st.rerun()
+    if cols4[1].button('刪除', key=f'{side}_del', use_container_width=True):
+        if st.session_state[f'{side}_list']:
+            st.session_state[f'{side}_list'].pop()
+        st.rerun()
+    if cols4[2].button('重製', key=f'{side}_reset', use_container_width=True):
+        st.session_state[f'{side}_list'] = []
+        st.rerun()
+
 with left:
     # ------ 閒家 ------
     st.markdown("### 閒家點數：3張牌 (1~13/JQK)")
@@ -91,36 +133,8 @@ with left:
         player_input = st.text_input('', value=show_cards(st.session_state.p_list), key='player_cards_in', max_chars=14)
     with col2:
         st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.p_list)}</span>", unsafe_allow_html=True)
-
-    # --- 橫排鍵盤: 1~7 ---
-    row1 = ['1', '2', '3', '4', '5', '6', '7']
-    cols1 = st.columns(7)
-    for i, v in enumerate(row1):
-        if cols1[i].button(v, key=f'player_card_{v}', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.p_list) < 4:
-                st.session_state.p_list.append(v_num)
-            st.rerun()
-
-    # --- 橫排鍵盤: 8~10 J Q K ---
-    row2 = ['8', '9', '10', 'J', 'Q', 'K']
-    cols2 = st.columns(6)
-    for i, v in enumerate(row2):
-        if cols2[i].button(v, key=f'player_card_{v}_2', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.p_list) < 4:
-                st.session_state.p_list.append(v_num)
-            st.rerun()
-
-    # --- 橫排: 刪除/重製 ---
-    cols3 = st.columns(2)
-    if cols3[0].button("刪除", key='player_del', use_container_width=True):
-        if st.session_state.p_list:
-            st.session_state.p_list.pop()
-        st.rerun()
-    if cols3[1].button("重製", key='player_reset', use_container_width=True):
-        st.session_state.p_list = []
-        st.rerun()
+    st.session_state['p_list'] = st.session_state.get('p_list', [])
+    card_keyboard('p')
 
     # ------ 莊家 ------
     st.markdown("### 莊家點數：3張牌 (1~13/JQK)")
@@ -129,33 +143,8 @@ with left:
         banker_input = st.text_input('', value=show_cards(st.session_state.b_list), key='banker_cards_in', max_chars=14)
     with col2:
         st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.b_list)}</span>", unsafe_allow_html=True)
-
-    row1 = ['1', '2', '3', '4', '5', '6', '7']
-    cols1 = st.columns(7)
-    for i, v in enumerate(row1):
-        if cols1[i].button(v, key=f'banker_card_{v}', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.b_list) < 4:
-                st.session_state.b_list.append(v_num)
-            st.rerun()
-
-    row2 = ['8', '9', '10', 'J', 'Q', 'K']
-    cols2 = st.columns(6)
-    for i, v in enumerate(row2):
-        if cols2[i].button(v, key=f'banker_card_{v}_2', use_container_width=True):
-            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
-            if len(st.session_state.b_list) < 4:
-                st.session_state.b_list.append(v_num)
-            st.rerun()
-
-    cols3 = st.columns(2)
-    if cols3[0].button("刪除", key='banker_del', use_container_width=True):
-        if st.session_state.b_list:
-            st.session_state.b_list.pop()
-        st.rerun()
-    if cols3[1].button("重製", key='banker_reset', use_container_width=True):
-        st.session_state.b_list = []
-        st.rerun()
+    st.session_state['b_list'] = st.session_state.get('b_list', [])
+    card_keyboard('b')
 
     # ------ 剩餘牌池 ------
     deck_show = deck_str(update_deck(st.session_state.history, st.session_state.p_list, st.session_state.b_list))
