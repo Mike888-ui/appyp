@@ -3,7 +3,7 @@ import gspread
 from collections import Counter
 
 # Google Sheets 設定
-SHEET_ID = '你的 Google Sheet ID:https://docs.google.com/spreadsheets/d/1R2eGuVxmgHRIIfmjoY49wYHk9OutAt8aTxiY2VhNRgg/edit?gid=0#gid=0
+SHEET_ID ='1R2eGuVxmgHRIIfmjoY49wYHk9OutAt8aTxiY2VhNRgg/edit?gid=0#gid=0'
 COLUMNS = [
     'player', 'player_cards',
     'banker', 'banker_cards',
