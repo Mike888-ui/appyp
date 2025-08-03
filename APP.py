@@ -217,11 +217,12 @@ if 重設牌池:
 
 if 儲存:
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-    sheetname = f'牌局記錄{pd.Timestamp.now().strftime('%m%d_%H%M%S')}"
+    sheetname = f'牌局記錄{pd.Timestamp.now().strftime("%m%d_%H%M%S")}'
     excel_out = CSV_FILE.replace('.csv', '.xlsx')
     if os.path.exists(excel_out):
         os.remove(excel_out)
     with pd.ExcelWriter(excel_out, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name=sheetname, index=False)
     st.success(f"已將本次紀錄存為：{excel_out}")
+
 
