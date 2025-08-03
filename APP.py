@@ -1,7 +1,11 @@
 import streamlit as st
 import gspread
 from collections import Counter
+import os
 
+if not os.path.exists("client_secret.json"):
+    with open("client_secret.json", "w") as f:
+        f.write(st.secrets["google_service_account"])
 # Google Sheets 設定
 SHEET_ID ='1R2eGuVxmgHRIIfmjoY49wYHk9OutAt8aTxiY2VhNRgg'
 COLUMNS = [
