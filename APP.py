@@ -1,4 +1,4 @@
-# ===== 百家樂簡化紀錄APP（CSV/XLSX自動判斷，電腦/手機/雲端均可用）=====
+# ===== 百家樂簡化紀錄APP（自訂合併邏輯/來源標記/欄位去重）=====
 # 作者: MASA & 俊賢
 
 import streamlit as st
@@ -29,22 +29,31 @@ def calc_baccarat_point(cards): return sum((c if c < 10 else 0) for c in cards) 
 def init_deck(): return {n: 32 for n in range(1, 14)}
 def deck_str(deck): return ' '.join(f'{card_str(k)}:{deck[k]}' for k in range(1,14))
 
-# ----- 資料讀取自動偵測 -----
+# ----- 資料合併（依player_cards+banker_cards去重，標記來源）-----
 def load_data(N=None):
-    # 優先用 xlsx，否則用 csv
     xlsx_file = 'ai_train_history.xlsx'
     csv_file = 'ai_train_history.csv'
+    dfs = []
     if os.path.exists(xlsx_file):
-        df = pd.read_excel(xlsx_file)
-    elif os.path.exists(csv_file):
-        df = pd.read_csv(csv_file, encoding='utf-8-sig')
-    else:
+        df_xlsx = pd.read_excel(xlsx_file)
+        df_xlsx["_source"] = "xlsx"
+        dfs.append(df_xlsx)
+    if os.path.exists(csv_file):
+        df_csv = pd.read_csv(csv_file, encoding='utf-8-sig')
+        df_csv["_source"] = "csv"
+        dfs.append(df_csv)
+    if not dfs:
         return pd.DataFrame()
-    if N: return df.tail(N)
+    # 合併，依「player_cards, banker_cards」去重
+    df = pd.concat(dfs, ignore_index=True)
+    df = df.drop_duplicates(subset=["player_cards", "banker_cards"], keep='first')
+    # 排序（可根據需要調整）
+    df = df.sort_values(by=["_source", "player_cards", "banker_cards"], ascending=[True, True, True], ignore_index=True)
+    if N:
+        return df.tail(N)
     return df
 
 def ai_predict_next_adviceN_only(df, N=3):
-    # df 直接傳入
     if df.empty or 'advice' not in df.columns: return '暫無相關數據資料', ''
     advs = df['advice'].astype(str).tolist()
     now_count = min(len(advs), N)
@@ -122,14 +131,12 @@ with col2:
 def update_deck():
     deck = init_deck()
     df = load_data()
-    # 從紀錄扣掉歷史牌
     if not df.empty:
         for idx, row in df.iterrows():
             for k in ['player_cards','banker_cards']:
                 if k in row and pd.notnull(row[k]):
                     for c in parse_cards(row[k]):
                         deck[c] -= 1
-    # 扣目前畫面輸入的
     for c in parse_cards(st.session_state["_player_cards"]) + parse_cards(st.session_state["_banker_cards"]):
         deck[c] -= 1
     return deck
