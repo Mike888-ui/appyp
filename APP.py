@@ -59,7 +59,7 @@ st.markdown("<h1 style='text-align:center;color:#154278;'>百家樂 結果輸入
 if 'round_log' not in st.session_state:
     st.session_state.round_log = ""
 if 'compare_result' not in st.session_state:
-    st.session_state.compare_result = {}
+    st.rerun()
 
 left, right = st.columns([2,3])
 
@@ -104,8 +104,7 @@ with left:
         }
         st.rerun()
     if btn2[1].button('重設牌池', use_container_width=True):
-        st.session_state.round_log = ""
-        st.session_state.compare_result = {}
+        st.session_state.round_log = "
         st.rerun()
 
     st.markdown("---")
