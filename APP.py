@@ -4,25 +4,31 @@ import os
 import csv
 from collections import Counter
 
+# ---- 牌型/資料結構 ----
 NUM_TO_FACE = {11: 'J', 12: 'Q', 13: 'K'}
 FACE_TO_NUM = {'J': 11, 'Q': 12, 'K': 13}
 CSV_FILE = 'ai_train_history.csv'
 
 def card_str(n):
     return NUM_TO_FACE.get(n, str(n))
-
-def calc_baccarat_point(cards):
-    return sum((c if c < 10 else 0) for c in cards) % 10 if cards else ""
-
+def parse_cards(s):
+    out = []
+    for x in str(s).replace('，',',').replace(' ', ',').split(','):
+        x = x.strip().upper()
+        if not x: continue
+        if x in FACE_TO_NUM:
+            out.append(FACE_TO_NUM[x])
+        elif x.isdigit() and 1 <= int(x) <= 13:
+            out.append(int(x))
+    return out[:4]
 def show_cards(cards):
     return ','.join([card_str(c) for c in cards])
-
+def calc_baccarat_point(cards):
+    return sum((c if c < 10 else 0) for c in cards) % 10 if cards else ""
 def init_deck():
     return {n: 32 for n in range(1, 14)}
-
 def deck_str(deck):
     return ' '.join(f'{card_str(k)}:{deck[k]}' for k in range(1,14))
-
 def update_deck(history, p_list, b_list):
     tmp_deck = init_deck()
     for h in history:
@@ -57,16 +63,14 @@ def ai_predict_next_adviceN_only(csvfile, N=3):
     show_detail = f"莊:{stat.get('莊',0)} 閒:{stat.get('閒',0)} 和:{stat.get('和',0)}"
     return f"{most} ({percent}%)「{show_detail}」", f"{percent}%"
 
-# 初始化
+# ---- 初始化檔案/狀態 ----
 if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, 'w', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
-            'player', 'player_cards', 'banker', 'banker_cards',
-            'final', 'advice'
+            'player', 'player_cards', 'banker', 'banker_cards', 'final', 'advice'
         ])
 
-deck = init_deck()
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'p_list' not in st.session_state:
@@ -74,57 +78,94 @@ if 'p_list' not in st.session_state:
 if 'b_list' not in st.session_state:
     st.session_state.b_list = []
 
-def number_pad(side, label):
-    st.markdown(f"#### {label}")
-    nums = [str(i) for i in range(1, 11)] + ['J', 'Q', 'K']
-    rows = [nums[i:i+4] for i in range(0, len(nums), 4)]
-    for idx, row in enumerate(rows):
-        cols = st.columns(len(row))
-        for i, v in enumerate(row):
-            def add_card(v=v):
-                if len(st.session_state[f'{side}_list']) < 3:
-                    st.session_state[f'{side}_list'].append(FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v))
-            with cols[i]:
-                if st.button(v, key=f"{side}_{v}_{idx}", use_container_width=True):
-                    add_card()
-    # 刪除/清空 按鈕獨立一排
-    cols = st.columns(2)
-    with cols[0]:
-        if st.button('刪除一張', key=f'{side}_del', use_container_width=True):
-            if st.session_state[f'{side}_list']:
-                st.session_state[f'{side}_list'].pop()
-    with cols[1]:
-        if st.button('全部清除', key=f'{side}_clear', use_container_width=True):
-            st.session_state[f'{side}_list'] = []
+# ---- UI主體：左右欄設計 ----
+st.set_page_config('百家樂資料分析', layout='wide')
+st.markdown("<h1 style='text-align:center;color:#154278;'>百家樂 比對資料分析（手機/網頁）</h1>", unsafe_allow_html=True)
 
-# UI區
-with st.container():
-    if 'p_list' not in st.session_state:
+left, right = st.columns([3, 4])
+
+with left:
+    # ------ 閒家 ------
+    st.markdown("### 閒家點數：3張牌 (1~13/JQK)")
+    col1, col2 = st.columns([2,2])
+    with col1:
+        player_input = st.text_input('', value=show_cards(st.session_state.p_list), key='player_cards_in', max_chars=14)
+    with col2:
+        st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.p_list)}</span>", unsafe_allow_html=True)
+
+    rows = [list(map(str,range(1,11))) + ['J','Q','K']]
+    btn_cols = st.columns(13)
+    for i, v in enumerate(rows[0]):
+        if btn_cols[i].button(v, key=f'player_card_{v}', use_container_width=True):
+            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+            if len(st.session_state.p_list) < 4:
+                st.session_state.p_list.append(v_num)
+            st.experimental_rerun()
+    del_col, res_col = st.columns([1, 1])
+    if del_col.button("刪除", key='player_del'):
+        if st.session_state.p_list:
+            st.session_state.p_list.pop()
+        st.experimental_rerun()
+    if res_col.button("重製", key='player_reset'):
         st.session_state.p_list = []
-    if 'b_list' not in st.session_state:
+        st.experimental_rerun()
+
+    # ------ 莊家 ------
+    st.markdown("### 莊家點數：3張牌 (1~13/JQK)")
+    col1, col2 = st.columns([2,2])
+    with col1:
+        banker_input = st.text_input('', value=show_cards(st.session_state.b_list), key='banker_cards_in', max_chars=14)
+    with col2:
+        st.markdown(f"目前點數：<span style='color:blue;font-size:1.4em;'>{calc_baccarat_point(st.session_state.b_list)}</span>", unsafe_allow_html=True)
+
+    rows = [list(map(str,range(1,11))) + ['J','Q','K']]
+    btn_cols = st.columns(13)
+    for i, v in enumerate(rows[0]):
+        if btn_cols[i].button(v, key=f'banker_card_{v}', use_container_width=True):
+            v_num = FACE_TO_NUM[v] if v in FACE_TO_NUM else int(v)
+            if len(st.session_state.b_list) < 4:
+                st.session_state.b_list.append(v_num)
+            st.experimental_rerun()
+    del_col, res_col = st.columns([1, 1])
+    if del_col.button("刪除", key='banker_del'):
+        if st.session_state.b_list:
+            st.session_state.b_list.pop()
+        st.experimental_rerun()
+    if res_col.button("重製", key='banker_reset'):
         st.session_state.b_list = []
-    st.markdown('<h2 style="text-align:center; font-size:2.2rem;">百家樂手機輸入版</h2>', unsafe_allow_html=True)
+        st.experimental_rerun()
 
-    number_pad('p', "閒家出牌")
-    st.markdown(f"已選牌: <b>{show_cards(st.session_state.p_list)}</b>　點數: <b>{calc_baccarat_point(st.session_state.p_list)}</b>", unsafe_allow_html=True)
-    st.markdown("---")
-    number_pad('b', "莊家出牌")
-    st.markdown(f"已選牌: <b>{show_cards(st.session_state.b_list)}</b>　點數: <b>{calc_baccarat_point(st.session_state.b_list)}</b>", unsafe_allow_html=True)
+    # ------ 剩餘牌池 ------
+    deck_show = deck_str(update_deck(st.session_state.history, st.session_state.p_list, st.session_state.b_list))
+    st.markdown(f'<div style="color:#008080;font-weight:bold;font-size:1.15rem;">剩餘牌池：{deck_show}</div>', unsafe_allow_html=True)
 
-# 剩餘牌池
-deck_show = deck_str(update_deck(st.session_state.history, st.session_state.p_list, st.session_state.b_list))
-st.markdown(f'<div style="color:#008080;font-weight:bold;font-size:1rem;">剩餘牌池：{deck_show}</div>', unsafe_allow_html=True)
+    # ------ 主按鈕 ------
+    op1, op2, op3 = st.columns(3)
+    with op1:
+        比對 = st.button('比對')
+    with op2:
+        重設牌池 = st.button('重設牌池')
+    with op3:
+        儲存 = st.button('儲存紀錄')
 
-# 操作按鈕
-cols = st.columns(3)
-with cols[0]:
-    比對 = st.button('比對', use_container_width=True)
-with cols[1]:
-    清空 = st.button('全部清空', use_container_width=True)
-with cols[2]:
-    匯出 = st.button('匯出Excel', use_container_width=True)
+with right:
+    # ------ 結果/預測區 ------
+    st.markdown("#### 比對預測(3局)：")
+    pred, rate = ai_predict_next_adviceN_only(CSV_FILE, N=3)
+    st.markdown(f"<div style='color:blue;'>{pred}</div>", unsafe_allow_html=True)
+    st.markdown("#### 比對預測(6局)：")
+    auto_pred, auto_rate = ai_predict_next_adviceN_only(CSV_FILE, N=6)
+    st.markdown(f"<div style='color:blue;'>{auto_pred}</div>", unsafe_allow_html=True)
+    st.markdown("#### 比對正確率：")
+    st.markdown(f"<div style='color:blue;'>{auto_rate}</div>", unsafe_allow_html=True)
 
-# 主邏輯
+    # ------ 記錄區 ------
+    st.markdown("#### 記錄區：")
+    if 'round_log' not in st.session_state:
+        st.session_state.round_log = ""
+    st.text_area('', st.session_state.round_log, height=230, key='round_log_show', disabled=True)
+
+# ---- 操作主流程 ----
 if 比對:
     p_list = st.session_state.p_list
     b_list = st.session_state.b_list
@@ -161,36 +202,26 @@ if 比對:
             record['final'],
             record['advice']
         ])
-    st.success(f'本局結果：閒={p_point} [{show_cards(p_list)}] 莊={b_point} [{show_cards(b_list)}] 結果={advice}')
+    msg = f"紀錄: 閒={p_point} [{show_cards(p_list)}] 莊={b_point} [{show_cards(b_list)}] 結果advice={advice}\n"
+    if 'round_log' not in st.session_state:
+        st.session_state.round_log = ""
+    st.session_state.round_log += msg
     st.session_state.p_list = []
     st.session_state.b_list = []
+    st.experimental_rerun()
 
-if 清空:
+if 重設牌池:
     st.session_state.p_list = []
     st.session_state.b_list = []
+    st.experimental_rerun()
 
-if 匯出:
+if 儲存:
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-    sheetname = f'牌局記錄{pd.Timestamp.now().strftime("%m%d_%H%M%S")}'
+    sheetname = f'牌局記錄{pd.Timestamp.now().strftime('%m%d_%H%M%S')}"
     excel_out = CSV_FILE.replace('.csv', '.xlsx')
     if os.path.exists(excel_out):
         os.remove(excel_out)
     with pd.ExcelWriter(excel_out, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name=sheetname, index=False)
-    st.success(f"已匯出：{excel_out}")
+    st.success(f"已將本次紀錄存為：{excel_out}")
 
-# 比對預測
-pred, rate = ai_predict_next_adviceN_only(CSV_FILE, N=3)
-auto_pred, auto_rate = ai_predict_next_adviceN_only(CSV_FILE, N=6)
-st.markdown(f'**比對預測(3局)：** {pred}')
-st.markdown(f'**比對預測(6局)：** {auto_pred}')
-st.markdown(f'**比對正確率：** {auto_rate}')
-
-# 記錄區
-st.markdown('---')
-st.markdown('### 歷史紀錄')
-try:
-    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-    st.dataframe(df.tail(20), use_container_width=True)
-except:
-    st.warning('目前無紀錄資料')
