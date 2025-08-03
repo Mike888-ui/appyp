@@ -1,6 +1,3 @@
-# ===== 百家樂簡化紀錄APP（自訂合併邏輯/來源標記/欄位去重）=====
-# 作者: MASA & 俊賢
-
 import streamlit as st
 import pandas as pd
 import os
