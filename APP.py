@@ -21,22 +21,29 @@ st.markdown("### 選擇當局結果")
 btn_css = """
 <style>
 div[data-testid="column"] > div {
-    padding-right: 0.5rem !important;
-    padding-left: 0.5rem !important;
+    padding: 0 !important;
 }
 div[data-testid="columns"] {
-    gap: 0 !important;
+    gap: 14px !important;
 }
 button[kind="secondary"], button[kind="primary"] {
-    font-size: 18px !important;
-    height: 38px !important;
-    padding: 2px 0 !important;
+    font-size: 20px !important;
+    height: 44px !important;
+    border-radius: 7px !important;
+    background: #345 !important;
+    color: #fff !important;
+    margin: 0 0 0 0 !important;
+    box-shadow: 2px 2px 3px #0003;
+}
+button[disabled] {
+    background: #ccc !important;
+    color: #999 !important;
 }
 </style>
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-cols = st.columns(5, gap="small")
+cols = st.columns([1,1,1,1,1])
 btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
 btn_keys = ["b1", "b2", "b3", "b4", "b5"]
 btn_clicks = []
