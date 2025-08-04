@@ -12,7 +12,7 @@ if not os.path.exists(csv_file):
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
 st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-# ---- 按鍵區：只做暫存
+# -- 按鍵區（暫存）
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if st.button("莊", use_container_width=True):
@@ -29,7 +29,6 @@ with col4:
 
 cur_result = st.session_state.get('cur_result', "")
 
-# ---- 比對/紀錄按鈕
 st.markdown("---")
 st.markdown("#### 當前選擇結果")
 if cur_result:
@@ -37,13 +36,21 @@ if cur_result:
 else:
     st.warning("請選擇一個結果")
 
+# -- 只在按下比對/紀錄才紀錄＋顯示「已紀錄：」訊息
 if st.button("比對 / 紀錄", type="primary", use_container_width=True, disabled=not cur_result):
     # 寫入 CSV
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
     st.success(f"已紀錄：{cur_result}")
+    # 歷史紀錄區只顯示這一筆
+    st.markdown("#### 歷史紀錄")
+    st.write(f"已紀錄：{cur_result}")
     st.session_state['cur_result'] = ""  # 清空暫存
+else:
+    # 如果剛寫入完會自動清空，否則歷史紀錄不顯示
+    st.markdown("#### 歷史紀錄")
+    st.write("尚未紀錄新一局")
 
 # ----------- 比對分析函式 ------------
 def ai_predict_next_adviceN_only(csvfile, N=3):
@@ -70,7 +77,7 @@ def ai_predict_next_adviceN_only(csvfile, N=3):
     show_detail = f"比對到的數量結果：莊：{stat.get('莊',0)}筆  閒：{stat.get('閒',0)}筆  和：{stat.get('和',0)}筆"
     return f"{most} ({percent}%)「{show_detail}」", f"{percent}%"
 
-# ---- 比對顯示區
+# ---- 比對顯示區（保留原來功能）
 if os.path.exists(csv_file):
     df = pd.read_csv(csv_file, encoding='utf-8-sig')
 else:
@@ -82,11 +89,6 @@ if len(df) > 0:
     st.info(f"比對預測(3局)：{pred}")
     st.info(f"比對預測(6局)：{auto_pred}")
     st.write(f"比對正確率：{auto_rate}")
-
-    st.markdown("#### 歷史紀錄")
-    # 這裡只顯示「已紀錄：結果」格式
-    for idx, row in df.tail(20).iterrows():
-        st.write(f"已紀錄：{row['advice']}")
 
 if st.button("匯出Excel"):
     if os.path.exists(csv_file):
