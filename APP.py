@@ -18,67 +18,62 @@ st.markdown("### 選擇當局結果")
 # 設計：欄寬全部均分，按鈕用小字，padding/高度精簡
 # --- 五鍵完全靠攏無間隙
 # --- 五鍵完全靠攏無間隙
-btn_css = f"""
+btn_css = """
 <style>
-div[data-testid="column"] > div {{
+div[data-testid="column"] > div {
     padding: 0 !important;
-}}
-div[data-testid="columns"] {{
+}
+div[data-testid="columns"] {
     gap: 14px !important;
-}}
-button[kind="secondary"], button[kind="primary"] {{
+}
+button[kind="secondary"], button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
     width: 100% !important;
-    border-radius: 10px !important;
+    border-radius: 15px !important;
     background: #345 !important;
     color: #fff !important;
-    margin: 0 0 0 0 !important;
+    margin: 0 !important;
     box-shadow: 2px 2px 4px #0003;
-    transition: background 0.2s, color 0.2s;
-}}
-button[disabled] {{
+    border: 0 !important;
+    transition: background 0.15s, color 0.15s, box-shadow 0.12s;
+}
+/* 禁用樣式 */
+button[disabled] {
     background: #ccc !important;
     color: #999 !important;
-}}
-/* 高亮顯示目前選擇的按鈕 */
-.cur_selected button {{
-    background: #ea9e2e !important;
-    color: #222 !important;
-    border: 2px solid #e65100 !important;
+}
+/* 高亮當前選取（白底深色字） */
+.cur_selected button {
+    background: #fff !important;
+    color: #223 !important;
     font-weight: bold !important;
-}}
+    border: 2.5px solid #ea9e2e !important;
+    box-shadow: 0 3px 8px #0001;
+}
 </style>
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-# 五個欄，全部均寬
+# 五個欄，均分橫排
 cols = st.columns([1,1,1,1,1])
-
 btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
 btn_keys = ["b1", "b2", "b3", "b4", "b5"]
 
-# 取得當前狀態
+# 狀態取得
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 cur_result = st.session_state['cur_result']
-
 btn_clicks = []
 
 for i, col in enumerate(cols):
-    # 若該按鈕是目前選擇，外框加高亮 class
-    btn_container = col
     with col:
         _add_cur = False
-        if i == 0 and cur_result == "莊":
+        # 「莊」「閒」「和」高亮
+        if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
             st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
             _add_cur = True
-        elif i == 1 and cur_result == "閒":
-            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
-            _add_cur = True
-        elif i == 2 and cur_result == "和":
-            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
-            _add_cur = True
+        # 「清除」高亮：完全沒選任何（預設清除）
         elif i == 3 and cur_result == "":
             st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
             _add_cur = True
@@ -89,7 +84,7 @@ for i, col in enumerate(cols):
         if _add_cur:
             st.markdown('</div>', unsafe_allow_html=True)
 
-# 狀態處理
+# 狀態判斷
 if btn_clicks[0]:
     st.session_state['cur_result'] = "莊"
 if btn_clicks[1]:
@@ -107,6 +102,7 @@ if btn_clicks[4] and cur_result:
     st.success(f"已紀錄：{cur_result}")
     st.session_state['last_record'] = cur_result
     st.session_state['cur_result'] = ""
+
 
 
 def ai_predict_next_adviceN_only(csvfile, N=3):
