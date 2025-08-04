@@ -10,11 +10,8 @@ if not os.path.exists(csv_file):
         writer.writerow(['advice'])
 
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
-st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-st.markdown("### 選擇當局結果")
-
-# ----【1. 五鍵橫排、超防呆CSS（無位移/陰影/動畫/外框，只變色）】
+# ========== 彩色按鈕CSS ==========
 btn_css = """
 <style>
 div[data-testid="column"] > div {
@@ -23,13 +20,25 @@ div[data-testid="column"] > div {
 div[data-testid="columns"] {
     gap: 14px !important;
 }
+/* 預設彩色按鈕底色 */
+.btn-banker button {background: #e53935 !important; color: #fff !important;}
+.btn-player button {background: #1e88e5 !important; color: #fff !important;}
+.btn-tie    button {background: #43a047 !important; color: #fff !important;}
+.btn-clear  button {background: #888 !important; color: #fff !important;}
+.btn-save   button {background: #ffb300 !important; color: #774700 !important;}
+/* 選取高亮（白底＋彩邊框） */
+.cur_selected button {
+    background: #fff !important;
+    color: #222 !important;
+    font-weight: bold !important;
+    border: 2.2px solid #ffb300 !important;
+    box-shadow: none !important;
+}
 button[kind="secondary"], button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
     width: 100% !important;
     border-radius: 15px !important;
-    background: #345 !important;
-    color: #fff !important;
     margin: 0 !important;
     border: 0 !important;
     outline: none !important;
@@ -40,21 +49,7 @@ button[kind="secondary"], button[kind="primary"] {
 button[disabled] {
     background: #ccc !important;
     color: #999 !important;
-    outline: none !important;
-    box-shadow: none !important;
-    border: 0 !important;
 }
-/* 高亮當前選取（白底深色字），只變色不位移 */
-.cur_selected button {
-    background: #fff !important;
-    color: #223 !important;
-    font-weight: bold !important;
-    outline: none !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    transition: none !important;
-}
-/* 完全防止點擊、聚焦、active 狀態時任何位移或外框 */
 button:focus, button:active, button:target {
     outline: none !important;
     box-shadow: none !important;
@@ -68,49 +63,69 @@ button:focus, button:active, button:target {
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-# 五個欄，均分橫排
+# ========== 五鍵橫排（彩色） ==========
 btn_clicks = []
 cols = st.columns([1,1,1,1,1])
 btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
 btn_keys = ["b1", "b2", "b3", "b4", "b5"]
+btn_css_classes = [
+    "btn-banker", "btn-player", "btn-tie", "btn-clear", "btn-save"
+]
 
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 cur_result = st.session_state['cur_result']
 
+# ========== 這段 JS 讓每次按下都自動滾回頂端 ==========
+st.markdown("""
+<script>
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
+window.scrollToTop = scrollToTop;
+</script>
+""", unsafe_allow_html=True)
+
+# --- 按鈕產生（含彩色class與高亮）
 for i, col in enumerate(cols):
     with col:
         _add_cur = False
+        css_class = btn_css_classes[i]
+        # 決定是否高亮
         if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
-            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
+            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
             _add_cur = True
         elif i == 3 and cur_result == "":
-            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
+            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
             _add_cur = True
-        if i < 4:
-            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i]))
         else:
-            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result))
-        if _add_cur:
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
 
-if btn_clicks[0]:
-    st.session_state['cur_result'] = "莊"
-if btn_clicks[1]:
-    st.session_state['cur_result'] = "閒"
-if btn_clicks[2]:
-    st.session_state['cur_result'] = "和"
-if btn_clicks[3]:
-    st.session_state['cur_result'] = ""
+        if i < 4:
+            if st.button(btn_labels[i], key=btn_keys[i], on_click=lambda: st.session_state.update({'cur_result': btn_labels[i] if i < 3 else ""})):
+                st.session_state['cur_result'] = btn_labels[i] if i < 3 else ""
+                st.markdown('<script>window.scrollToTop();</script>', unsafe_allow_html=True)
+            btn_clicks.append(False)
+        else:
+            if st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result):
+                # 執行紀錄
+                with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([cur_result])
+                st.success(f"已紀錄：{cur_result}")
+                st.session_state['last_record'] = cur_result
+                st.session_state['cur_result'] = ""
+                st.markdown('<script>window.scrollToTop();</script>', unsafe_allow_html=True)
+            btn_clicks.append(False)
+        st.markdown('</div>', unsafe_allow_html=True)
+
 cur_result = st.session_state.get('cur_result', "")
 
-if btn_clicks[4] and cur_result:
-    with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([cur_result])
-    st.success(f"已紀錄：{cur_result}")
-    st.session_state['last_record'] = cur_result
-    st.session_state['cur_result'] = ""
+# 其它顯示區不變
+st.markdown("---")
+st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
+if cur_result:
+    st.markdown(f'<div style="font-size:17px;color:#1a237e;background:#e3f2fd;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">已選擇：{cur_result}</div>', unsafe_allow_html=True)
+else:
+    st.markdown(f'<div style="font-size:17px;color:#888;background:#fffde7;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">請選擇一個結果</div>', unsafe_allow_html=True)
 
 def ai_predict_next_adviceN_only(csvfile, N=3):
     if not os.path.exists(csvfile):
@@ -165,4 +180,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．所有主操作按鈕一列並排，單手也能秒選！精簡顯示。")
+st.caption("手機/電腦可用．每鍵不同色，主操作永遠在眼前！")
