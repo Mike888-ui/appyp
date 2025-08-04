@@ -37,14 +37,6 @@ button[kind="secondary"], button[kind="primary"] {
     box-sizing: border-box !important;
     transition: none !important;
 }
-/* 禁用樣式 */
-button[disabled] {
-    background: #ccc !important;
-    color: #999 !important;
-    outline: none !important;
-    box-shadow: none !important;
-    border: 0 !important;
-}
 /* 只要選取就變白底深字，完全沒有任何額外特效 */
 .cur_selected button {
     background: #fff !important;
@@ -56,7 +48,7 @@ button[disabled] {
     transition: none !important;
 }
 /* 完全移除點擊、active、focus 任何位移或外框 */
-button:focus, button:active, button:target {
+button:active, button:target {
     outline: none !important;
     box-shadow: none !important;
     border: 0 !important;
