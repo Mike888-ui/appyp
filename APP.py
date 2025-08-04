@@ -14,7 +14,7 @@ st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
 st.markdown("### 選擇當局結果")
 
-# ----【1. 按鈕靠攏】
+# ----【1. 五鍵橫排、超防呆CSS（無位移/陰影/動畫/外框，只變色）】
 btn_css = """
 <style>
 div[data-testid="column"] > div {
@@ -23,7 +23,6 @@ div[data-testid="column"] > div {
 div[data-testid="columns"] {
     gap: 14px !important;
 }
-/* 一般狀態 */
 button[kind="secondary"], button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
@@ -38,7 +37,6 @@ button[kind="secondary"], button[kind="primary"] {
     box-sizing: border-box !important;
     transition: none !important;
 }
-/* 禁用樣式 */
 button[disabled] {
     background: #ccc !important;
     color: #999 !important;
@@ -46,7 +44,7 @@ button[disabled] {
     box-shadow: none !important;
     border: 0 !important;
 }
-/* 只要選取就變白底深字，完全沒有任何額外特效 */
+/* 高亮當前選取（白底深色字），只變色不位移 */
 .cur_selected button {
     background: #fff !important;
     color: #223 !important;
@@ -56,8 +54,8 @@ button[disabled] {
     box-shadow: none !important;
     transition: none !important;
 }
-/* 終極防呆：所有互動態全部無外框、無陰影、無位移、無hover特效 */
-button:focus, button:active, button:target, button:visited, button:focus-visible, button:hover {
+/* 完全防止點擊、聚焦、active 狀態時任何位移或外框 */
+button:focus, button:active, button:target {
     outline: none !important;
     box-shadow: none !important;
     border: 0 !important;
@@ -70,7 +68,32 @@ button:focus, button:active, button:target, button:visited, button:focus-visible
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-# 狀態判斷
+# 五個欄，均分橫排
+btn_clicks = []
+cols = st.columns([1,1,1,1,1])
+btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
+btn_keys = ["b1", "b2", "b3", "b4", "b5"]
+
+if 'cur_result' not in st.session_state:
+    st.session_state['cur_result'] = ""
+cur_result = st.session_state['cur_result']
+
+for i, col in enumerate(cols):
+    with col:
+        _add_cur = False
+        if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
+            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
+            _add_cur = True
+        elif i == 3 and cur_result == "":
+            st.markdown('<div class="cur_selected">', unsafe_allow_html=True)
+            _add_cur = True
+        if i < 4:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i]))
+        else:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result))
+        if _add_cur:
+            st.markdown('</div>', unsafe_allow_html=True)
+
 if btn_clicks[0]:
     st.session_state['cur_result'] = "莊"
 if btn_clicks[1]:
@@ -88,8 +111,6 @@ if btn_clicks[4] and cur_result:
     st.success(f"已紀錄：{cur_result}")
     st.session_state['last_record'] = cur_result
     st.session_state['cur_result'] = ""
-
-
 
 def ai_predict_next_adviceN_only(csvfile, N=3):
     if not os.path.exists(csvfile):
