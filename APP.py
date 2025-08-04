@@ -12,16 +12,15 @@ if not os.path.exists(csv_file):
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
 st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-# ---- 用 Streamlit 原生 button 直排（最佳兼容性）
 st.markdown("### 選擇當局結果")
-btn_size = (6, 2)  # (width, height)
 
-col = st.container()
-with col:
-    c1 = st.button("莊", key="b1", use_container_width=True)
-    c2 = st.button("閒", key="b2", use_container_width=True)
-    c3 = st.button("和", key="b3", use_container_width=True)
-    c4 = st.button("清除", key="b4", use_container_width=True)
+# -- 用 column+empty 來讓按鈕只佔中間 3/4
+col1, col2, col3 = st.columns([1, 3, 1])  # 3/5 只佔中間
+with col2:
+    c1 = st.button("莊", key="b1")
+    c2 = st.button("閒", key="b2")
+    c3 = st.button("和", key="b3")
+    c4 = st.button("清除", key="b4")
 
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
@@ -44,8 +43,7 @@ if cur_result:
 else:
     st.warning("請選擇一個結果")
 
-# -- 只在按下比對/紀錄才紀錄＋顯示「已紀錄：」訊息
-if st.button("比對 / 紀錄", type="primary", use_container_width=True, disabled=not cur_result):
+if st.button("比對 / 紀錄", type="primary", disabled=not cur_result):
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
@@ -106,4 +104,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．單列直排按鈕，無前端自訂 HTML/JS，100%支援雲端。")
+st.caption("手機/電腦可用．直排按鈕縮短75%，單手好操作。")
