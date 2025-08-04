@@ -35,9 +35,7 @@ if 'cur_result' not in st.session_state:
 
 # 處理按鍵動作
 import streamlit.components.v1 as components
-import urllib.parse
 
-# 用js抓表單事件（支援手機雙擊/瀏覽器回填）
 components.html("""
     <script>
         document.querySelectorAll('form button').forEach(btn=>{
@@ -48,11 +46,13 @@ components.html("""
     </script>
 """, height=0)
 
-import streamlit.runtime.scriptrunner
 query_params = st.query_params
 if 'cur_result' in query_params:
     st.session_state['cur_result'] = query_params['cur_result'][0]
     st.query_params.clear()
+
+# ！！！【重點】補上這行！！！
+cur_result = st.session_state.get('cur_result', "")
 
 st.markdown("---")
 st.markdown("#### 當前選擇結果")
