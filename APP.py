@@ -14,8 +14,24 @@ st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
 st.markdown("### 選擇當局結果")
 
-# 按鈕橫向排版
-col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1.5])  # 最後比對鍵加寬
+# ----【1. 按鈕靠攏】
+# 設計：欄寬全部均分，按鈕用小字，padding/高度精簡
+btn_css = """
+<style>
+div[data-testid="column"] > div {
+    padding-right: 3px !important;
+    padding-left: 3px !important;
+}
+button[kind="secondary"], button[kind="primary"] {
+    font-size: 18px !important;
+    height: 38px !important;
+    padding: 2px 0 !important;
+}
+</style>
+"""
+st.markdown(btn_css, unsafe_allow_html=True)
+
+col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1.3])
 with col1:
     c1 = st.button("莊", key="b1")
 with col2:
@@ -27,7 +43,6 @@ with col4:
 with col5:
     c5 = st.button("比對 / 紀錄", key="b5", disabled=not st.session_state.get('cur_result', ""))
 
-# 處理狀態
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 
@@ -42,11 +57,13 @@ if c4:
 cur_result = st.session_state.get('cur_result', "")
 
 st.markdown("---")
-st.markdown("#### 當前選擇結果")
+
+# ----【2. 當前選擇結果+顯示縮小】
+st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
 if cur_result:
-    st.info(f"已選擇：{cur_result}")
+    st.markdown(f'<div style="font-size:17px;color:#1a237e;background:#e3f2fd;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">已選擇：{cur_result}</div>', unsafe_allow_html=True)
 else:
-    st.warning("請選擇一個結果")
+    st.markdown(f'<div style="font-size:17px;color:#888;background:#fffde7;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">請選擇一個結果</div>', unsafe_allow_html=True)
 
 if c5 and cur_result:
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
@@ -109,4 +126,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．所有主操作按鈕一列並排，單手也能秒選！")
+st.caption("手機/電腦可用．所有主操作按鈕一列並排，單手也能秒選！精簡顯示。")
