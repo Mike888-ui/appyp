@@ -15,9 +15,6 @@ st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 st.markdown("### 選擇當局結果")
 
 # ----【1. 按鈕靠攏】
-# 設計：欄寬全部均分，按鈕用小字，padding/高度精簡
-# --- 五鍵完全靠攏無間隙
-# --- 五鍵完全靠攏無間隙
 btn_css = """
 <style>
 div[data-testid="column"] > div {
@@ -34,26 +31,24 @@ button[kind="secondary"], button[kind="primary"] {
     background: #345 !important;
     color: #fff !important;
     margin: 0 !important;
-    box-shadow: 2px 2px 4px #0003;
     border: 0 !important;
-    transition: background 0.15s, color 0.15s, box-shadow 0.12s;
+    /* 完全無 box-shadow, 無 transition, 無 border */
 }
 /* 禁用樣式 */
 button[disabled] {
     background: #ccc !important;
     color: #999 !important;
 }
-/* 高亮當前選取（白底深色字） */
+/* 高亮當前選取（白底深色字），只變色不位移 */
 .cur_selected button {
     background: #fff !important;
     color: #223 !important;
     font-weight: bold !important;
-    border: 2.5px solid #ea9e2e !important;
-    box-shadow: 0 3px 8px #0001;
 }
 </style>
 """
 st.markdown(btn_css, unsafe_allow_html=True)
+
 
 # 五個欄，均分橫排
 cols = st.columns([1,1,1,1,1])
