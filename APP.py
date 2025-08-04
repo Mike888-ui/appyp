@@ -3,6 +3,7 @@ import pandas as pd
 import csv, os
 from collections import Counter
 
+# -- CSV 檔案路徑設定
 csv_file = os.path.join(os.path.dirname(__file__), 'ai_train_history.csv')
 if not os.path.exists(csv_file):
     with open(csv_file, 'w', encoding='utf-8-sig', newline='') as f:
@@ -12,20 +13,46 @@ if not os.path.exists(csv_file):
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
 st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-# -- 按鍵區（暫存）
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("莊", use_container_width=True):
-        st.session_state['cur_result'] = "莊"
-with col2:
-    if st.button("閒", use_container_width=True):
-        st.session_state['cur_result'] = "閒"
-with col3:
-    if st.button("和", use_container_width=True):
-        st.session_state['cur_result'] = "和"
-with col4:
-    if st.button("清除", use_container_width=True):
-        st.session_state['cur_result'] = ""
+# -- 按鈕介面 (直排/縮小)
+st.markdown("### 選擇當局結果")
+btn_style = "font-size:22px;padding:10px 0;width:90%;margin-bottom:6px;border-radius:9px;"
+st.markdown(
+    f"""
+    <div style='display: flex; flex-direction: column; align-items: center;'>
+        <form action="" method="post">
+            <button style="{btn_style}background-color:#f55;color:white;" name="action" value="莊">莊</button>
+            <button style="{btn_style}background-color:#2196F3;color:white;" name="action" value="閒">閒</button>
+            <button style="{btn_style}background-color:#43a047;color:white;" name="action" value="和">和</button>
+            <button style="{btn_style}background-color:#bbb;color:#333;" name="action" value="清除">清除</button>
+        </form>
+    </div>
+    """, unsafe_allow_html=True
+)
+
+# -- 讀取目前狀態
+if 'cur_result' not in st.session_state:
+    st.session_state['cur_result'] = ""
+
+# 處理按鍵動作
+import streamlit.components.v1 as components
+import urllib.parse
+
+# 用js抓表單事件（支援手機雙擊/瀏覽器回填）
+components.html("""
+    <script>
+        document.querySelectorAll('form button').forEach(btn=>{
+            btn.onclick = function(e){
+                fetch(window.location.pathname+"?cur_result="+encodeURIComponent(this.value),{method:"GET"})
+            }
+        })
+    </script>
+""", height=0)
+
+import streamlit.runtime.scriptrunner
+query_params = st.experimental_get_query_params()
+if 'cur_result' in query_params:
+    st.session_state['cur_result'] = query_params['cur_result'][0]
+    st.experimental_set_query_params()  # 清除網址上的參數
 
 cur_result = st.session_state.get('cur_result', "")
 
@@ -43,14 +70,8 @@ if st.button("比對 / 紀錄", type="primary", use_container_width=True, disabl
         writer = csv.writer(f)
         writer.writerow([cur_result])
     st.success(f"已紀錄：{cur_result}")
-    # 歷史紀錄區只顯示這一筆
-    st.markdown("#### 歷史紀錄")
-    st.write(f"已紀錄：{cur_result}")
+    st.session_state['last_record'] = cur_result  # 暫存歷史紀錄
     st.session_state['cur_result'] = ""  # 清空暫存
-else:
-    # 如果剛寫入完會自動清空，否則歷史紀錄不顯示
-    st.markdown("#### 歷史紀錄")
-    st.write("尚未紀錄新一局")
 
 # ----------- 比對分析函式 ------------
 def ai_predict_next_adviceN_only(csvfile, N=3):
@@ -90,6 +111,15 @@ if len(df) > 0:
     st.info(f"比對預測(6局)：{auto_pred}")
     st.write(f"比對正確率：{auto_rate}")
 
+st.markdown("---")
+# 歷史紀錄顯示在最下面
+st.markdown("#### 歷史紀錄")
+last_record = st.session_state.get('last_record', None)
+if last_record:
+    st.write(f"已紀錄：{last_record}")
+else:
+    st.write("尚未紀錄新一局")
+
 if st.button("匯出Excel"):
     if os.path.exists(csv_file):
         excel_out = csv_file.replace('.csv', '.xlsx')
@@ -99,4 +129,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．只輸入當局結果（莊/閒/和），需按「比對」才會寫入與分析")
+st.caption("手機/電腦可用．單列直排按鈕，適合單手操作．比對結果一目了然．歷史紀錄只顯示最新一局")
