@@ -3,7 +3,6 @@ import pandas as pd
 import csv, os
 from collections import Counter
 
-# -- CSV 檔案路徑設定
 csv_file = os.path.join(os.path.dirname(__file__), 'ai_train_history.csv')
 if not os.path.exists(csv_file):
     with open(csv_file, 'w', encoding='utf-8-sig', newline='') as f:
@@ -13,7 +12,7 @@ if not os.path.exists(csv_file):
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
 st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-# -- 按鈕介面
+# ---- 按鍵區：只做暫存
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if st.button("莊", use_container_width=True):
@@ -30,16 +29,23 @@ with col4:
 
 cur_result = st.session_state.get('cur_result', "")
 
+# ---- 比對/紀錄按鈕
+st.markdown("---")
+st.markdown("#### 當前選擇結果")
 if cur_result:
-    # 立即寫入當前結果到 csv
+    st.info(f"已選擇：{cur_result}")
+else:
+    st.warning("請選擇一個結果")
+
+if st.button("比對 / 紀錄", type="primary", use_container_width=True, disabled=not cur_result):
+    # 寫入 CSV
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
     st.success(f"已紀錄：{cur_result}")
-    # 寫完後自動清空
-    st.session_state['cur_result'] = ""
+    st.session_state['cur_result'] = ""  # 清空暫存
 
-# ----------- 比對分析（沿用原本比對函式）------------
+# ----------- 比對分析函式 ------------
 def ai_predict_next_adviceN_only(csvfile, N=3):
     if not os.path.exists(csvfile):
         return '暫無相關數據資料', ''
@@ -64,7 +70,7 @@ def ai_predict_next_adviceN_only(csvfile, N=3):
     show_detail = f"比對到的數量結果：莊：{stat.get('莊',0)}筆  閒：{stat.get('閒',0)}筆  和：{stat.get('和',0)}筆"
     return f"{most} ({percent}%)「{show_detail}」", f"{percent}%"
 
-# ---- 比對顯示區（沿用原顯示）----
+# ---- 比對顯示區
 if os.path.exists(csv_file):
     df = pd.read_csv(csv_file, encoding='utf-8-sig')
 else:
@@ -78,7 +84,9 @@ if len(df) > 0:
     st.write(f"比對正確率：{auto_rate}")
 
     st.markdown("#### 歷史紀錄")
-    st.dataframe(df.tail(20), use_container_width=True)
+    # 這裡只顯示「已紀錄：結果」格式
+    for idx, row in df.tail(20).iterrows():
+        st.write(f"已紀錄：{row['advice']}")
 
 if st.button("匯出Excel"):
     if os.path.exists(csv_file):
@@ -89,4 +97,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．只輸入當局結果（莊/閒/和）．所有比對功能與歷史紀錄自動同步")
+st.caption("手機/電腦可用．只輸入當局結果（莊/閒/和），需按「比對」才會寫入與分析")
