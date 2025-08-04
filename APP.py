@@ -23,6 +23,7 @@ div[data-testid="column"] > div {
 div[data-testid="columns"] {
     gap: 14px !important;
 }
+/* 常態 */
 button[kind="secondary"], button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
@@ -32,18 +33,33 @@ button[kind="secondary"], button[kind="primary"] {
     color: #fff !important;
     margin: 0 !important;
     border: 0 !important;
-    /* 完全無 box-shadow, 無 transition, 無 border */
+    outline: none !important;
+    box-shadow: none !important;
+    transition: none !important;
 }
 /* 禁用樣式 */
 button[disabled] {
     background: #ccc !important;
     color: #999 !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 /* 高亮當前選取（白底深色字），只變色不位移 */
 .cur_selected button {
     background: #fff !important;
     color: #223 !important;
     font-weight: bold !important;
+    outline: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+/* 防止點擊、聚焦、active 狀態時位移或外框 */
+button:focus, button:active, button:target {
+    outline: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    background: inherit !important;
 }
 </style>
 """
