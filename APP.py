@@ -49,12 +49,10 @@ components.html("""
 """, height=0)
 
 import streamlit.runtime.scriptrunner
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if 'cur_result' in query_params:
     st.session_state['cur_result'] = query_params['cur_result'][0]
-    st.experimental_set_query_params()  # 清除網址上的參數
-
-cur_result = st.session_state.get('cur_result', "")
+    st.query_params.clear()
 
 st.markdown("---")
 st.markdown("#### 當前選擇結果")
