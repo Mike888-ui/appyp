@@ -16,11 +16,16 @@ st.markdown("### 選擇當局結果")
 
 # ----【1. 按鈕靠攏】
 # 設計：欄寬全部均分，按鈕用小字，padding/高度精簡
+# --- 五鍵完全靠攏無間隙
+# --- 五鍵完全靠攏無間隙
 btn_css = """
 <style>
 div[data-testid="column"] > div {
-    padding-right: 3px !important;
-    padding-left: 3px !important;
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+}
+div[data-testid="columns"] {
+    gap: 0 !important;
 }
 button[kind="secondary"], button[kind="primary"] {
     font-size: 18px !important;
@@ -31,47 +36,40 @@ button[kind="secondary"], button[kind="primary"] {
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1.3])
-with col1:
-    c1 = st.button("莊", key="b1")
-with col2:
-    c2 = st.button("閒", key="b2")
-with col3:
-    c3 = st.button("和", key="b3")
-with col4:
-    c4 = st.button("清除", key="b4")
-with col5:
-    c5 = st.button("比對 / 紀錄", key="b5", disabled=not st.session_state.get('cur_result', ""))
+cols = st.columns(5, gap="small")
+btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
+btn_keys = ["b1", "b2", "b3", "b4", "b5"]
+btn_clicks = []
 
+for i, col in enumerate(cols):
+    with col:
+        if i < 4:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i]))
+        else:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not st.session_state.get('cur_result', "")))
+
+# 狀態處理不變
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 
-if c1:
+if btn_clicks[0]:
     st.session_state['cur_result'] = "莊"
-if c2:
+if btn_clicks[1]:
     st.session_state['cur_result'] = "閒"
-if c3:
+if btn_clicks[2]:
     st.session_state['cur_result'] = "和"
-if c4:
+if btn_clicks[3]:
     st.session_state['cur_result'] = ""
 cur_result = st.session_state.get('cur_result', "")
 
-st.markdown("---")
-
-# ----【2. 當前選擇結果+顯示縮小】
-st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
-if cur_result:
-    st.markdown(f'<div style="font-size:17px;color:#1a237e;background:#e3f2fd;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">已選擇：{cur_result}</div>', unsafe_allow_html=True)
-else:
-    st.markdown(f'<div style="font-size:17px;color:#888;background:#fffde7;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">請選擇一個結果</div>', unsafe_allow_html=True)
-
-if c5 and cur_result:
+if btn_clicks[4] and cur_result:
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
     st.success(f"已紀錄：{cur_result}")
     st.session_state['last_record'] = cur_result
     st.session_state['cur_result'] = ""
+
 
 def ai_predict_next_adviceN_only(csvfile, N=3):
     if not os.path.exists(csvfile):
