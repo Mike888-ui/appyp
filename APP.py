@@ -3,7 +3,6 @@ import pandas as pd
 import csv, os
 from collections import Counter
 
-# -- CSV 檔案路徑設定
 csv_file = os.path.join(os.path.dirname(__file__), 'ai_train_history.csv')
 if not os.path.exists(csv_file):
     with open(csv_file, 'w', encoding='utf-8-sig', newline='') as f:
@@ -13,45 +12,29 @@ if not os.path.exists(csv_file):
 st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
 st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
-# -- 按鈕介面 (直排/縮小)
+# ---- 用 Streamlit 原生 button 直排（最佳兼容性）
 st.markdown("### 選擇當局結果")
-btn_style = "font-size:22px;padding:10px 0;width:90%;margin-bottom:6px;border-radius:9px;"
-st.markdown(
-    f"""
-    <div style='display: flex; flex-direction: column; align-items: center;'>
-        <form action="" method="post">
-            <button style="{btn_style}background-color:#f55;color:white;" name="action" value="莊">莊</button>
-            <button style="{btn_style}background-color:#2196F3;color:white;" name="action" value="閒">閒</button>
-            <button style="{btn_style}background-color:#43a047;color:white;" name="action" value="和">和</button>
-            <button style="{btn_style}background-color:#bbb;color:#333;" name="action" value="清除">清除</button>
-        </form>
-    </div>
-    """, unsafe_allow_html=True
-)
+btn_size = (6, 2)  # (width, height)
 
-# -- 讀取目前狀態
+col = st.container()
+with col:
+    c1 = st.button("莊", key="b1", use_container_width=True)
+    c2 = st.button("閒", key="b2", use_container_width=True)
+    c3 = st.button("和", key="b3", use_container_width=True)
+    c4 = st.button("清除", key="b4", use_container_width=True)
+
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 
-# 處理按鍵動作
-import streamlit.components.v1 as components
+if c1:
+    st.session_state['cur_result'] = "莊"
+if c2:
+    st.session_state['cur_result'] = "閒"
+if c3:
+    st.session_state['cur_result'] = "和"
+if c4:
+    st.session_state['cur_result'] = ""
 
-components.html("""
-    <script>
-        document.querySelectorAll('form button').forEach(btn=>{
-            btn.onclick = function(e){
-                fetch(window.location.pathname+"?cur_result="+encodeURIComponent(this.value),{method:"GET"})
-            }
-        })
-    </script>
-""", height=0)
-
-query_params = st.query_params
-if 'cur_result' in query_params:
-    st.session_state['cur_result'] = query_params['cur_result'][0]
-    st.query_params.clear()
-
-# ！！！【重點】補上這行！！！
 cur_result = st.session_state.get('cur_result', "")
 
 st.markdown("---")
@@ -63,15 +46,13 @@ else:
 
 # -- 只在按下比對/紀錄才紀錄＋顯示「已紀錄：」訊息
 if st.button("比對 / 紀錄", type="primary", use_container_width=True, disabled=not cur_result):
-    # 寫入 CSV
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
     st.success(f"已紀錄：{cur_result}")
-    st.session_state['last_record'] = cur_result  # 暫存歷史紀錄
-    st.session_state['cur_result'] = ""  # 清空暫存
+    st.session_state['last_record'] = cur_result
+    st.session_state['cur_result'] = ""
 
-# ----------- 比對分析函式 ------------
 def ai_predict_next_adviceN_only(csvfile, N=3):
     if not os.path.exists(csvfile):
         return '暫無相關數據資料', ''
@@ -96,7 +77,6 @@ def ai_predict_next_adviceN_only(csvfile, N=3):
     show_detail = f"比對到的數量結果：莊：{stat.get('莊',0)}筆  閒：{stat.get('閒',0)}筆  和：{stat.get('和',0)}筆"
     return f"{most} ({percent}%)「{show_detail}」", f"{percent}%"
 
-# ---- 比對顯示區（保留原來功能）
 if os.path.exists(csv_file):
     df = pd.read_csv(csv_file, encoding='utf-8-sig')
 else:
@@ -110,7 +90,6 @@ if len(df) > 0:
     st.write(f"比對正確率：{auto_rate}")
 
 st.markdown("---")
-# 歷史紀錄顯示在最下面
 st.markdown("#### 歷史紀錄")
 last_record = st.session_state.get('last_record', None)
 if last_record:
@@ -127,4 +106,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．單列直排按鈕，適合單手操作．比對結果一目了然．歷史紀錄只顯示最新一局")
+st.caption("手機/電腦可用．單列直排按鈕，無前端自訂 HTML/JS，100%支援雲端。")
