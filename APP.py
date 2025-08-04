@@ -23,7 +23,7 @@ div[data-testid="column"] > div {
 div[data-testid="columns"] {
     gap: 14px !important;
 }
-button[kind="secondary"], button[kind="primary"] {
+button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
     width: 100% !important;
