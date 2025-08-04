@@ -64,40 +64,7 @@ button:focus, button:active, button:target {
 st.markdown(btn_css, unsafe_allow_html=True)
 
 # ========== 五鍵橫排（彩色） ==========
-btn_clicks = []
-cols = st.columns([1,1,1,1,1])
-btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
-btn_keys = ["b1", "b2", "b3", "b4", "b5"]
-btn_css_classes = [
-    "btn-banker", "btn-player", "btn-tie", "btn-clear", "btn-save"
-]
 
-if 'cur_result' not in st.session_state:
-    st.session_state['cur_result'] = ""
-cur_result = st.session_state['cur_result']
-
-# ========== 這段 JS 讓每次按下都自動滾回頂端 ==========
-st.markdown("""
-<script>
-function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
-window.scrollToTop = scrollToTop;
-</script>
-""", unsafe_allow_html=True)
-
-# --- 按鈕產生（含彩色class與高亮）
-for i, col in enumerate(cols):
-    with col:
-        _add_cur = False
-        css_class = btn_css_classes[i]
-        # 決定是否高亮
-        if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
-            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
-            _add_cur = True
-        elif i == 3 and cur_result == "":
-            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
-            _add_cur = True
-        else:
-            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
 
         if i < 4:
             if st.button(btn_labels[i], key=btn_keys[i], on_click=lambda: st.session_state.update({'cur_result': btn_labels[i] if i < 3 else ""})):
@@ -118,7 +85,35 @@ for i, col in enumerate(cols):
         st.markdown('</div>', unsafe_allow_html=True)
 
 cur_result = st.session_state.get('cur_result', "")
+btn_clicks = []
+cols = st.columns([1,1,1,1,1])
+btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
+btn_keys = ["b1", "b2", "b3", "b4", "b5"]
+btn_css_classes = [
+    "btn-banker", "btn-player", "btn-tie", "btn-clear", "btn-save"
+]
 
+if 'cur_result' not in st.session_state:
+    st.session_state['cur_result'] = ""
+cur_result = st.session_state['cur_result']
+
+for i, col in enumerate(cols):
+    with col:
+        css_class = btn_css_classes[i]
+        _add_cur = False
+        if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
+            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
+            _add_cur = True
+        elif i == 3 and cur_result == "":
+            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
+            _add_cur = True
+        else:
+            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
+        if i < 4:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i]))
+        else:
+            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result))
+        st.markdown('</div>', unsafe_allow_html=True)
 # 其它顯示區不變
 st.markdown("---")
 st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
