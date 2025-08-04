@@ -73,6 +73,8 @@ st.title("百家樂自動學習分析 (手機版精簡)")
 # -- 狀態
 if 'deck' not in st.session_state:
     st.session_state.deck = init_deck()
+if 'round_log' not in st.session_state:
+    st.session_state.round_log = []
 
 # -- 牌面輸入
 with st.form("input_form", clear_on_submit=False):
@@ -115,7 +117,10 @@ if submitted:
         'p_list': p_list, 'b_list': b_list
     }
     write_to_csv(csv_file, record)
-    st.success(f"已紀錄：閒={p_point} [{show_cards(p_list)}] 莊={b_point} [{show_cards(b_list)}] 結果advice={advice}")
+    # 累積紀錄區
+    log_str = f"紀錄: 閒={p_point} [{show_cards(p_list)}] 莊={b_point} [{show_cards(b_list)}] 結果advice={advice}"
+    st.session_state.round_log.append(log_str)
+    st.success(log_str)
 
     # 比對
     pred, rate = ai_predict_next_adviceN_only(csv_file, N=3)
@@ -138,15 +143,15 @@ for h in hist:
     for c in parse_cards(h.get('banker_cards', '')):
         tmp_deck[c] -= 1
 
+# -- 紀錄區顯示（像你第一張圖，會一直累積每局）
+st.markdown("#### 記錄區：")
+st.text('\n'.join(st.session_state.round_log[-30:]))  # 顯示最近30筆（防爆量）
+
+# -- 牌池顯示
 st.markdown("#### 剩餘牌池")
 st.code(deck_str(tmp_deck))
 
-# -- 歷史紀錄區
-if hist:
-    st.markdown("#### 歷史紀錄")
-    st.dataframe(df.tail(20), use_container_width=True)
-
-# -- 匯出Excel
+# -- 匯出Excel（仍保留）
 if st.button("匯出Excel"):
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file, encoding='utf-8-sig')
@@ -157,4 +162,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．功能精簡，無問路輸入。")
+st.caption("手機/電腦可用，歷史資料不顯示表格，只在即時記錄區顯示。")
