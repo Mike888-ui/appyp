@@ -23,7 +23,6 @@ div[data-testid="column"] > div {
 div[data-testid="columns"] {
     gap: 14px !important;
 }
-/* 常態 */
 button[kind="secondary"], button[kind="primary"] {
     font-size: 22px !important;
     height: 54px !important;
@@ -35,6 +34,7 @@ button[kind="secondary"], button[kind="primary"] {
     border: 0 !important;
     outline: none !important;
     box-shadow: none !important;
+    box-sizing: border-box !important;
     transition: none !important;
 }
 /* 禁用樣式 */
@@ -43,8 +43,9 @@ button[disabled] {
     color: #999 !important;
     outline: none !important;
     box-shadow: none !important;
+    border: 0 !important;
 }
-/* 高亮當前選取（白底深色字），只變色不位移 */
+/* 只要選取就變白底深字，完全沒有任何額外特效 */
 .cur_selected button {
     background: #fff !important;
     color: #223 !important;
@@ -54,12 +55,14 @@ button[disabled] {
     box-shadow: none !important;
     transition: none !important;
 }
-/* 防止點擊、聚焦、active 狀態時位移或外框 */
+/* 完全移除點擊、active、focus 任何位移或外框 */
 button:focus, button:active, button:target {
     outline: none !important;
     box-shadow: none !important;
     border: 0 !important;
     background: inherit !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
 }
 </style>
 """
