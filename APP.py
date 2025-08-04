@@ -64,55 +64,24 @@ if not os.path.exists(csv_file):
         writer.writerow([
             'player', 'player_cards',
             'banker', 'banker_cards',
-            'final', 'advice',
-            'big_eye_banker','small_banker','cockroach_banker',
-            'big_eye_player','small_player','cockroach_player'
+            'final', 'advice'
         ])
 
 st.set_page_config(page_title="百家樂自動學習助手", layout="centered")
-st.title("百家樂自動學習分析 (手機版)")
+st.title("百家樂自動學習分析 (手機版精簡)")
 
 # -- 狀態
 if 'deck' not in st.session_state:
     st.session_state.deck = init_deck()
-if 'road_state' not in st.session_state:
-    st.session_state.road_state = {
-        'banker': {'big_eye': None, 'small': None, 'cockroach': None},
-        'player': {'big_eye': None, 'small': None, 'cockroach': None}
-    }
 
 # -- 牌面輸入
 with st.form("input_form", clear_on_submit=False):
     col1, col2 = st.columns(2)
     with col1:
         player_input = st.text_input("閒家牌(1~13, JQK 用英文)", key='player_cards')
-        if st.form_submit_button("閒自動填"):
-            st.session_state['player_cards'] = player_input
     with col2:
         banker_input = st.text_input("莊家牌(1~13, JQK 用英文)", key='banker_cards')
-        if st.form_submit_button("莊自動填"):
-            st.session_state['banker_cards'] = banker_input
-
-    # 問路輸入
-    st.markdown("#### 問路紀錄")
-    road_cols = st.columns(2)
-    for idx, side in enumerate(['banker', 'player']):
-        with road_cols[idx]:
-            st.markdown(f"**{'莊' if side=='banker' else '閒'}問路**")
-            for road in ['big_eye', 'small', 'cockroach']:
-                val = st.radio(f"{road}:", options=['', '紅', '藍'], horizontal=True,
-                               key=f"{side}_{road}", index=0)
-                st.session_state.road_state[side][road] = val if val else None
-
     submitted = st.form_submit_button("紀錄/比對")
-
-# -- 主計算
-def get_road_status():
-    r = st.session_state.road_state
-    return (
-        r['banker']['big_eye'], r['banker']['small'], r['banker']['cockroach'],
-        r['player']['big_eye'], r['player']['small'], r['player']['cockroach'],
-    )
 
 def write_to_csv(filename, record):
     row = [
@@ -121,13 +90,7 @@ def write_to_csv(filename, record):
         record['banker'],
         show_cards(record.get('b_list', [])),
         record['final'],
-        record['advice'],
-        record['big_eye_banker'],
-        record['small_banker'],
-        record['cockroach_banker'],
-        record['big_eye_player'],
-        record['small_player'],
-        record['cockroach_player'],
+        record['advice']
     ]
     with open(filename, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
@@ -147,12 +110,8 @@ if submitted:
         advice = '莊'
     else:
         advice = '和'
-    (big_eye_banker, small_banker, cockroach_banker, big_eye_player, small_player, cockroach_player) = get_road_status()
     record = {
         'player': p_point, 'banker': b_point, 'final': iff, 'advice': advice,
-        'big_eye_banker': big_eye_banker or '', 'small_banker': small_banker or '',
-        'cockroach_banker': cockroach_banker or '', 'big_eye_player': big_eye_player or '',
-        'small_player': small_player or '', 'cockroach_player': cockroach_player or '',
         'p_list': p_list, 'b_list': b_list
     }
     write_to_csv(csv_file, record)
@@ -198,5 +157,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機瀏覽，所有功能一樣。")
-
+st.caption("手機/電腦可用．功能精簡，無問路輸入。")
