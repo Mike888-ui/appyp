@@ -14,14 +14,20 @@ st.title("百家樂-快速紀錄&分析 (手機極簡版)")
 
 st.markdown("### 選擇當局結果")
 
-# -- 用 column+empty 來讓按鈕只佔中間 3/4
-col1, col2, col3 = st.columns([1, 3, 1])  # 3/5 只佔中間
-with col2:
+# 按鈕橫向排版
+col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1.5])  # 最後比對鍵加寬
+with col1:
     c1 = st.button("莊", key="b1")
+with col2:
     c2 = st.button("閒", key="b2")
+with col3:
     c3 = st.button("和", key="b3")
+with col4:
     c4 = st.button("清除", key="b4")
+with col5:
+    c5 = st.button("比對 / 紀錄", key="b5", disabled=not st.session_state.get('cur_result', ""))
 
+# 處理狀態
 if 'cur_result' not in st.session_state:
     st.session_state['cur_result'] = ""
 
@@ -33,7 +39,6 @@ if c3:
     st.session_state['cur_result'] = "和"
 if c4:
     st.session_state['cur_result'] = ""
-
 cur_result = st.session_state.get('cur_result', "")
 
 st.markdown("---")
@@ -43,7 +48,7 @@ if cur_result:
 else:
     st.warning("請選擇一個結果")
 
-if st.button("比對 / 紀錄", type="primary", disabled=not cur_result):
+if c5 and cur_result:
     with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([cur_result])
@@ -104,4 +109,4 @@ if st.button("匯出Excel"):
             df.to_excel(writer, sheet_name="牌局記錄", index=False)
         st.success(f"已匯出: {excel_out}")
 
-st.caption("手機/電腦可用．直排按鈕縮短75%，單手好操作。")
+st.caption("手機/電腦可用．所有主操作按鈕一列並排，單手也能秒選！")
