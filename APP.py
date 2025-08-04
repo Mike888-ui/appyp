@@ -3,27 +3,32 @@ import pandas as pd
 import os
 from collections import Counter
 
-# 設定資料檔案路徑
 csv_file = "ai_train_history.csv"
 
-# 初始化資料
+# 自動建立或修正csv表頭
 if not os.path.exists(csv_file):
     df = pd.DataFrame(columns=["result"])
     df.to_csv(csv_file, index=False, encoding='utf-8-sig')
 else:
     df = pd.read_csv(csv_file, encoding='utf-8-sig')
+    # 若舊檔案沒有 result 欄，改名為 result
+    if "result" not in df.columns:
+        df.columns = ["result"]
+        df.to_csv(csv_file, index=False, encoding='utf-8-sig')
 
+st.set_page_config(page_title="百家樂 Web 比對分析", layout="centered")
 st.title("百家樂 Web 比對分析")
 
-# ===== 1. 輸入區 =====
-col1, col2 = st.columns([2,1])
+# ===== 操作區塊 =====
+col1, col2, col3 = st.columns([3,2,2])
 with col1:
-    result = st.selectbox("請選擇當局結果", ["", "莊", "閒", "和"])
+    result = st.selectbox("請選擇當局結果", ["", "莊", "閒", "和"], key="resultbox")
 with col2:
-    add_btn = st.button("送出")
-    del_btn = st.button("刪除上一筆")
+    add_btn = st.button("送出", key="add_btn")
+with col3:
+    del_btn = st.button("刪除上一筆", key="del_btn")
 
-# ===== 2. 新增紀錄功能 =====
+# ===== 新增/刪除功能 =====
 msg = ""
 if add_btn:
     if result:
@@ -45,7 +50,7 @@ if del_btn:
 if msg:
     st.info(msg)
 
-# ===== 3. 比對預測 =====
+# ===== 比對預測 =====
 def ai_predict_next_adviceN_only(df, N=3):
     advs = df['result'].astype(str).tolist()
     now_count = min(len(advs), N)
@@ -75,13 +80,13 @@ st.write("比對預測 (3局)：", pred_3)
 st.write("比對預測 (6局)：", pred_6)
 st.write("比對正確率：", rate_6)
 
-# ===== 4. 儲存紀錄 =====
-if st.button("儲存紀錄(Excel)"):
+# ===== 儲存紀錄 =====
+if st.button("儲存紀錄(Excel)", key="save_btn"):
     excel_out = csv_file.replace('.csv', '.xlsx')
     df.to_excel(excel_out, index=False)
     st.success(f"已將本次紀錄存為 {excel_out}")
 
-# ===== 5. 歷史紀錄區 =====
+# ===== 歷史紀錄區 =====
 st.divider()
 st.subheader("歷史記錄")
 if len(df) == 0:
