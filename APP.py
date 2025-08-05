@@ -42,7 +42,7 @@ elif btn_clicked == "刪除":
         if os.path.exists(CSV_FILE):
             st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
         else:
-            st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
+            st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
     if not st.session_state['history'].empty:
         st.session_state['history'] = st.session_state['history'].iloc[:-1, :]
         st.session_state['history'].to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
@@ -57,37 +57,6 @@ else:
     st.info("請選擇本局結果（莊/閒/和）")
 
 # --------- 4. 比對按鍵 ---------
-if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
-    if not st.session_state["curr_result"]:
-        st.error("請先選擇本局結果（莊/閒/和）")
-    else:
-        # 新增紀錄
-        new_record = {
-            "advice": st.session_state["curr_result"],
-            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        # 讀舊的
-        if os.path.exists(CSV_FILE):
-            history = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-        else:
-            history = pd.DataFrame(columns=["advice", "time"])
-        history = pd.concat([history, pd.DataFrame([new_record])], ignore_index=True)
-        history.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
-        st.session_state['history'] = history
-        st.session_state["curr_result"] = ""  # 清空
-        st.success(f"已比對並記錄：{new_record['advice']}")
-
-# --------- 5. 讀取歷史紀錄 ---------
-if 'history' not in st.session_state:
-    if os.path.exists(CSV_FILE):
-        try:
-            st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-        except Exception:
-            st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
-    else:
-        st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
-
-# --------- 6. 預測功能 ---------
 def ai_predict_next_adviceN_only(df, N=3):
     if 'advice' not in df.columns or df.empty:
         return '資料異常'
@@ -110,7 +79,45 @@ def ai_predict_next_adviceN_only(df, N=3):
     show_detail = f"莊:{stat.get('莊',0)} 閒:{stat.get('閒',0)} 和:{stat.get('和',0)}"
     return f"{most} ({percent}%) [{show_detail}]"
 
-# --------- 7. 比對/預測顯示 ---------
+if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
+    if not st.session_state["curr_result"]:
+        st.error("請先選擇本局結果（莊/閒/和）")
+    else:
+        # 新增紀錄
+        if 'history' in st.session_state and not st.session_state['history'].empty:
+            pred_3 = ai_predict_next_adviceN_only(st.session_state['history'], 3)
+        else:
+            pred_3 = ""
+        new_record = {
+            "advice": st.session_state["curr_result"],
+            "final": pred_3,  # 新增final欄
+            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        # 讀舊的
+        if os.path.exists(CSV_FILE):
+            try:
+                history = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+            except Exception:
+                history = pd.DataFrame(columns=["advice", "final", "time"])
+        else:
+            history = pd.DataFrame(columns=["advice", "final", "time"])
+        history = pd.concat([history, pd.DataFrame([new_record])], ignore_index=True)
+        history.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
+        st.session_state['history'] = history
+        st.session_state["curr_result"] = ""  # 清空
+        st.success(f"已比對並記錄：{new_record['advice']}")
+
+# --------- 5. 讀取歷史紀錄 ---------
+if 'history' not in st.session_state:
+    if os.path.exists(CSV_FILE):
+        try:
+            st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+        except Exception:
+            st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
+    else:
+        st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
+
+# --------- 6. 預測功能 ---------
 st.markdown("### 2. 比對預測")
 history = st.session_state['history']
 if not history.empty:
@@ -121,13 +128,14 @@ if not history.empty:
 else:
     st.info("目前無紀錄")
 
-# --------- 8. 歷史紀錄與下載 ---------
+# --------- 7. 歷史紀錄與下載（隱藏/展開） ---------
 st.markdown("### 3. 歷史紀錄")
-if not history.empty:
-    st.dataframe(history, use_container_width=True)
-    st.download_button("下載 CSV", data=history.to_csv(index=False), file_name="ai_train_history.csv")
-    history.to_excel("ai_train_history.xlsx", index=False)
-    with open("ai_train_history.xlsx", "rb") as f:
-        st.download_button("下載 Excel", data=f, file_name="ai_train_history.xlsx")
-else:
-    st.write("暫無歷史紀錄")
+with st.expander("點此展開/收起 歷史紀錄", expanded=False):
+    if not history.empty:
+        st.dataframe(history, use_container_width=True)
+        st.download_button("下載 CSV", data=history.to_csv(index=False), file_name="ai_train_history.csv")
+        history.to_excel("ai_train_history.xlsx", index=False)
+        with open("ai_train_history.xlsx", "rb") as f:
+            st.download_button("下載 Excel", data=f, file_name="ai_train_history.xlsx")
+    else:
+        st.write("暫無歷史紀錄")
