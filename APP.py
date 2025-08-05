@@ -92,11 +92,11 @@ for i, col in enumerate(cols):
         if i < 3:
             if st.button(btn_labels[i], key=btn_keys[i]):
                 st.session_state['cur_result'] = btn_labels[i]
-                st.experimental_rerun()
+                st.rerun()
         elif i == 3:
             if st.button(btn_labels[i], key=btn_keys[i]):
                 st.session_state['cur_result'] = ""
-                st.experimental_rerun()
+                st.rerun()
         else:
             if st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result):
                 # 執行紀錄
@@ -106,7 +106,7 @@ for i, col in enumerate(cols):
                 st.session_state['last_record'] = cur_result
                 st.session_state['cur_result'] = ""
                 st.success(f"已紀錄：{cur_result}")
-                st.experimental_rerun()
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 其它顯示區不變
