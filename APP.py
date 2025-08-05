@@ -63,27 +63,6 @@ button:focus, button:active, button:target {
 """
 st.markdown(btn_css, unsafe_allow_html=True)
 
-# ========== 五鍵橫排（彩色） ==========
-
-
-        if i < 4:
-            if st.button(btn_labels[i], key=btn_keys[i], on_click=lambda: st.session_state.update({'cur_result': btn_labels[i] if i < 3 else ""})):
-                st.session_state['cur_result'] = btn_labels[i] if i < 3 else ""
-                st.markdown('<script>window.scrollToTop();</script>', unsafe_allow_html=True)
-            btn_clicks.append(False)
-        else:
-            if st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result):
-                # 執行紀錄
-                with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerow([cur_result])
-                st.success(f"已紀錄：{cur_result}")
-                st.session_state['last_record'] = cur_result
-                st.session_state['cur_result'] = ""
-                st.markdown('<script>window.scrollToTop();</script>', unsafe_allow_html=True)
-            btn_clicks.append(False)
-        st.markdown('</div>', unsafe_allow_html=True)
-
 cur_result = st.session_state.get('cur_result', "")
 btn_clicks = []
 cols = st.columns([1,1,1,1,1])
@@ -114,6 +93,7 @@ for i, col in enumerate(cols):
         else:
             btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result))
         st.markdown('</div>', unsafe_allow_html=True)
+
 # 其它顯示區不變
 st.markdown("---")
 st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
