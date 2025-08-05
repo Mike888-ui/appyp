@@ -107,6 +107,7 @@ if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
         st.session_state["curr_result"] = ""  # 清空
         st.success(f"已比對並記錄：{new_record['advice']}")
 
+
 # --------- 5. 讀取歷史紀錄 ---------
 if 'history' not in st.session_state:
     if os.path.exists(CSV_FILE):
@@ -116,6 +117,13 @@ if 'history' not in st.session_state:
             st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
     else:
         st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
+
+# --------- 保證有三個欄位，並調順序 ---------
+for col in ["advice", "final", "time"]:
+    if col not in st.session_state['history'].columns:
+        st.session_state['history'][col] = ""
+st.session_state['history'] = st.session_state['history'][["advice", "final", "time"]]
+
 
 # --------- 6. 預測功能 ---------
 st.markdown("### 2. 比對預測")
