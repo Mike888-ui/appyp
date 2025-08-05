@@ -56,7 +56,7 @@ if st.session_state["curr_result"]:
 else:
     st.info("請選擇本局結果（莊/閒/和）")
 
-# --------- 4. 比對按鍵 ---------
+# --------- 4. 比對預測演算法（原有） ---------
 def ai_predict_next_adviceN_only(df, N=3):
     if 'advice' not in df.columns or df.empty:
         return '資料異常'
@@ -79,6 +79,28 @@ def ai_predict_next_adviceN_only(df, N=3):
     show_detail = f"莊:{stat.get('莊',0)} 閒:{stat.get('閒',0)} 和:{stat.get('和',0)}"
     return f"{most} ({percent}%) [{show_detail}]"
 
+# --------- 5. 取得比數明細與差值 ---------
+def get_counts_and_diff(df, N=3):
+    if 'advice' not in df.columns or df.empty:
+        return {'莊': 0, '閒': 0, '和': 0}, 0, 0
+    advs = df['advice'].astype(str).tolist()
+    now_count = min(len(advs), N)
+    if len(advs) < N:
+        return {'莊': 0, '閒': 0, '和': 0}, 0, 0
+    last_n = advs[-now_count:]
+    matches = []
+    for i in range(len(advs) - now_count):
+        if advs[i:i+now_count] == last_n:
+            if i + now_count < len(advs):
+                matches.append(advs[i + now_count])
+    from collections import Counter
+    stat = Counter(matches)
+    counts = {'莊': stat.get('莊', 0), '閒': stat.get('閒', 0), '和': stat.get('和', 0)}
+    diff = counts['莊'] - counts['閒']
+    max_diff = max(counts.values()) - min(counts.values()) if matches else 0
+    return counts, diff, max_diff
+
+# --------- 6. 比對 / 預測 按鍵 ---------
 if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
     if not st.session_state["curr_result"]:
         st.error("請先選擇本局結果（莊/閒/和）")
@@ -107,8 +129,7 @@ if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
         st.session_state["curr_result"] = ""  # 清空
         st.success(f"已比對並記錄：{new_record['advice']}")
 
-
-# --------- 5. 讀取歷史紀錄 ---------
+# --------- 7. 讀取歷史紀錄 ---------
 if 'history' not in st.session_state:
     if os.path.exists(CSV_FILE):
         try:
@@ -124,19 +145,28 @@ for col in ["advice", "final", "time"]:
         st.session_state['history'][col] = ""
 st.session_state['history'] = st.session_state['history'][["advice", "final", "time"]]
 
-
-# --------- 6. 預測功能 ---------
+# --------- 8. 比對預測區（顯示明細與差值） ---------
 st.markdown("### 2. 比對預測")
 history = st.session_state['history']
 if not history.empty:
     pred_3 = ai_predict_next_adviceN_only(history, 3)
     pred_6 = ai_predict_next_adviceN_only(history, 6)
-    st.markdown(f"#### 比對預測 (3局)： {pred_3}")
-    st.markdown(f"#### 比對預測 (6局)： {pred_6}")
+    cnt3, diff3, max_diff3 = get_counts_and_diff(history, 3)
+    cnt6, diff6, max_diff6 = get_counts_and_diff(history, 6)
+    st.markdown(
+        f"#### 比對預測 (3局)： {pred_3}｜莊-閒差值={cnt3['莊']}-{cnt3['閒']}={diff3}，最大差值={max_diff3}"
+        + f"<br>明細：莊:{cnt3['莊']} 閒:{cnt3['閒']} 和:{cnt3['和']}",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"#### 比對預測 (6局)： {pred_6}｜莊-閒差值={cnt6['莊']}-{cnt6['閒']}={diff6}，最大差值={max_diff6}"
+        + f"<br>明細：莊:{cnt6['莊']} 閒:{cnt6['閒']} 和:{cnt6['和']}",
+        unsafe_allow_html=True
+    )
 else:
     st.info("目前無紀錄")
 
-# --------- 7. 歷史紀錄與下載（隱藏/展開） ---------
+# --------- 9. 歷史紀錄與下載（隱藏/展開） ---------
 st.markdown("### 3. 歷史紀錄")
 with st.expander("點此展開/收起 歷史紀錄", expanded=False):
     if not history.empty:
