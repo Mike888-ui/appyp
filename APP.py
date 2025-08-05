@@ -4,17 +4,14 @@ import os
 from datetime import datetime
 
 st.set_page_config(page_title="百家樂 AI Web", layout="centered")
-st.title("百家樂 AI 分析 Web App（四鍵輸入簡版）")
+st.title("百家樂 AI 分析 Web App（四鍵輸入+比對）")
 
 CSV_FILE = 'ai_train_history.csv'
 
 # --------- 1. 按鍵輸入區 ---------
 st.markdown("### 1. 當局結果輸入")
 
-# 按鍵內容與自適應寬度設計
-button_labels = [("莊", 60), ("閒", 60), ("和", 60), ("刪除", 80)]  # (文字, 最小寬度 px)
-
-# 依據字數自動設寬度
+button_labels = [("莊", 60), ("閒", 60), ("和", 60), ("刪除", 80)]
 cols = st.columns(len(button_labels), gap="medium")
 btn_clicked = None
 for i, (label, min_width) in enumerate(button_labels):
@@ -33,32 +30,64 @@ for i, (label, min_width) in enumerate(button_labels):
     if cols[i].button(label, use_container_width=True, key=f"btn_{label}"):
         btn_clicked = label
 
-# --------- 2. 按鍵邏輯與記錄 ---------
-if 'history' not in st.session_state:
-    if os.path.exists(CSV_FILE):
-        st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-    else:
-        st.session_state['history'] = pd.DataFrame()
+# --------- 2. 暫存本局結果 ---------
+if "curr_result" not in st.session_state:
+    st.session_state["curr_result"] = ""
 
-if btn_clicked == "刪除":
-    # 刪除最後一筆紀錄
+if btn_clicked in ["莊", "閒", "和"]:
+    st.session_state["curr_result"] = btn_clicked
+elif btn_clicked == "刪除":
+    # 刪除最後一筆歷史紀錄
+    if "history" not in st.session_state:
+        if os.path.exists(CSV_FILE):
+            st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+        else:
+            st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
     if not st.session_state['history'].empty:
-        st.session_state['history'] = st.session_state['history'][:-1]
+        st.session_state['history'] = st.session_state['history'].iloc[:-1, :]
         st.session_state['history'].to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
         st.success("已刪除最後一筆紀錄")
     else:
         st.warning("目前沒有可刪除的紀錄")
-elif btn_clicked in ["莊", "閒", "和"]:
-    # 新增紀錄
-    new_record = {
-        "advice": btn_clicked,
-        "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-    st.session_state['history'] = st.session_state['history'].append(new_record, ignore_index=True)
-    st.session_state['history'].to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
-    st.success(f"已記錄：{btn_clicked}")
 
-# --------- 3. 預測功能 ---------
+# --------- 3. 顯示暫存輸入內容 ---------
+if st.session_state["curr_result"]:
+    st.info(f"目前待比對內容：{st.session_state['curr_result']}", icon="🔸")
+else:
+    st.info("請選擇本局結果（莊/閒/和）")
+
+# --------- 4. 比對按鍵 ---------
+if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
+    if not st.session_state["curr_result"]:
+        st.error("請先選擇本局結果（莊/閒/和）")
+    else:
+        # 新增紀錄
+        new_record = {
+            "advice": st.session_state["curr_result"],
+            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        # 讀舊的
+        if os.path.exists(CSV_FILE):
+            history = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+        else:
+            history = pd.DataFrame(columns=["advice", "time"])
+        history = pd.concat([history, pd.DataFrame([new_record])], ignore_index=True)
+        history.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
+        st.session_state['history'] = history
+        st.session_state["curr_result"] = ""  # 清空
+        st.success(f"已比對並記錄：{new_record['advice']}")
+
+# --------- 5. 讀取歷史紀錄 ---------
+if 'history' not in st.session_state:
+    if os.path.exists(CSV_FILE):
+        try:
+            st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+        except Exception:
+            st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
+    else:
+        st.session_state['history'] = pd.DataFrame(columns=["advice", "time"])
+
+# --------- 6. 預測功能 ---------
 def ai_predict_next_adviceN_only(df, N=3):
     if 'advice' not in df.columns or df.empty:
         return '資料異常'
@@ -81,7 +110,7 @@ def ai_predict_next_adviceN_only(df, N=3):
     show_detail = f"莊:{stat.get('莊',0)} 閒:{stat.get('閒',0)} 和:{stat.get('和',0)}"
     return f"{most} ({percent}%) [{show_detail}]"
 
-# --------- 4. 比對/預測顯示 ---------
+# --------- 7. 比對/預測顯示 ---------
 st.markdown("### 2. 比對預測")
 history = st.session_state['history']
 if not history.empty:
@@ -92,7 +121,7 @@ if not history.empty:
 else:
     st.info("目前無紀錄")
 
-# --------- 5. 歷史紀錄與下載 ---------
+# --------- 8. 歷史紀錄與下載 ---------
 st.markdown("### 3. 歷史紀錄")
 if not history.empty:
     st.dataframe(history, use_container_width=True)
