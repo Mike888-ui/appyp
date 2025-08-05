@@ -1,132 +1,50 @@
 import streamlit as st
 import pandas as pd
-import csv, os
-from collections import Counter
+import os
 
-csv_file = os.path.join(os.path.dirname(__file__), 'ai_train_history.csv')
-if not os.path.exists(csv_file):
-    with open(csv_file, 'w', encoding='utf-8-sig', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['advice'])
+st.set_page_config(page_title="百家樂 AI Web", layout="centered")
+st.title("百家樂 AI 分析 Web App（簡易 MVP）")
 
-st.set_page_config(page_title="百家樂-快速紀錄", layout="centered")
+CSV_FILE = 'ai_train_history.csv'
 
-# ========== 彩色按鈕CSS ==========
-btn_css = """
-<style>
-div[data-testid="column"] > div {
-    padding: 0 !important;
-}
-div[data-testid="columns"] {
-    gap: 14px !important;
-}
-/* 預設彩色按鈕底色 */
-.btn-banker button {background: #e53935 !important; color: #fff !important;}
-.btn-player button {background: #1e88e5 !important; color: #fff !important;}
-.btn-tie    button {background: #43a047 !important; color: #fff !important;}
-.btn-clear  button {background: #888 !important; color: #fff !important;}
-.btn-save   button {background: #ffb300 !important; color: #774700 !important;}
-/* 選取高亮（白底＋彩邊框） */
-.cur_selected button {
-    background: #fff !important;
-    color: #222 !important;
-    font-weight: bold !important;
-    border: 2.2px solid #ffb300 !important;
-    box-shadow: none !important;
-}
-button[kind="secondary"], button[kind="primary"] {
-    font-size: 22px !important;
-    height: 54px !important;
-    width: 100% !important;
-    border-radius: 15px !important;
-    margin: 0 !important;
-    border: 0 !important;
-    outline: none !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-    transition: none !important;
-}
-button[disabled] {
-    background: #ccc !important;
-    color: #999 !important;
-}
-button:focus, button:active, button:target {
-    outline: none !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    background: inherit !important;
-    color: inherit !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-}
-</style>
-"""
-st.markdown(btn_css, unsafe_allow_html=True)
+# --- 牌面相關 function ---
+NUM_TO_FACE = {11: 'J', 12: 'Q', 13: 'K'}
+FACE_TO_NUM = {'J': 11, 'Q': 12, 'K': 13}
 
-cur_result = st.session_state.get('cur_result', "")
-btn_clicks = []
-cols = st.columns([1,1,1,1,1])
-btn_labels = ["莊", "閒", "和", "清除", "比對 / 紀錄"]
-btn_keys = ["b1", "b2", "b3", "b4", "b5"]
-btn_css_classes = [
-    "btn-banker", "btn-player", "btn-tie", "btn-clear", "btn-save"
-]
+def card_str(n):
+    return NUM_TO_FACE.get(n, str(n))
 
-if 'cur_result' not in st.session_state:
-    st.session_state['cur_result'] = ""
-cur_result = st.session_state['cur_result']
+def parse_cards(s):
+    out = []
+    for x in str(s).replace('，',',').replace(' ', ',').split(','):
+        x = x.strip().upper()
+        if not x: continue
+        if x in FACE_TO_NUM:
+            out.append(FACE_TO_NUM[x])
+        elif x.isdigit() and 1 <= int(x) <= 13:
+            out.append(int(x))
+    return out[:4]
 
-for i, col in enumerate(cols):
-    with col:
-        css_class = btn_css_classes[i]
-        _add_cur = False
-        if (i == 0 and cur_result == "莊") or (i == 1 and cur_result == "閒") or (i == 2 and cur_result == "和"):
-            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
-            _add_cur = True
-        elif i == 3 and cur_result == "":
-            st.markdown(f'<div class="cur_selected {css_class}">', unsafe_allow_html=True)
-            _add_cur = True
-        else:
-            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
+def show_cards(cards):
+    return ','.join([card_str(c) for c in cards])
 
-        if i < 3:
-            if st.button(btn_labels[i], key=btn_keys[i]):
-                st.session_state['cur_result'] = btn_labels[i]
-                st.rerun()
-        elif i == 3:
-            if st.button(btn_labels[i], key=btn_keys[i]):
-                st.session_state['cur_result'] = ""
-                st.rerun()
-        else:
-            if st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result):
-                # 執行紀錄
-                with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerow([cur_result])
-                st.session_state['last_record'] = cur_result
-                st.session_state['cur_result'] = ""
-                st.success(f"已紀錄：{cur_result}")
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+def calc_baccarat_point(cards):
+    return sum((c if c < 10 else 0) for c in cards) % 10
 
-# 其它顯示區不變
-st.markdown("---")
-st.markdown('<span style="font-size:18px"><b>當前選擇結果</b></span>', unsafe_allow_html=True)
-if cur_result:
-    st.markdown(f'<div style="font-size:17px;color:#1a237e;background:#e3f2fd;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">已選擇：{cur_result}</div>', unsafe_allow_html=True)
-else:
-    st.markdown(f'<div style="font-size:17px;color:#888;background:#fffde7;border-radius:7px;padding:4px 10px;display:inline-block;margin:6px 0">請選擇一個結果</div>', unsafe_allow_html=True)
+def init_deck():
+    return {n: 32 for n in range(1, 14)}
 
-def ai_predict_next_adviceN_only(csvfile, N=3):
-    if not os.path.exists(csvfile):
-        return '暫無相關數據資料', ''
-    df = pd.read_csv(csvfile, encoding='utf-8-sig')
+def deck_str(deck):
+    return ' '.join(f'{card_str(k)}:{deck[k]}' for k in range(1,14))
+
+# --- 預測功能，直接複製你的桌面版 ---
+def ai_predict_next_adviceN_only(df, N=3):
     if 'advice' not in df.columns:
-        return '資料異常', ''
+        return '資料異常'
     advs = df['advice'].astype(str).tolist()
     now_count = min(len(advs), N)
     if len(advs) < N:
-        return '暫無相關數據資料', ''
+        return '暫無資料'
     last_n = advs[-now_count:]
     matches = []
     for i in range(len(advs) - now_count):
@@ -134,40 +52,95 @@ def ai_predict_next_adviceN_only(csvfile, N=3):
             if i + now_count < len(advs):
                 matches.append(advs[i + now_count])
     if not matches:
-        return '暫無相關數據資料', ''
+        return '暫無資料'
+    from collections import Counter
     stat = Counter(matches)
     most, cnt = stat.most_common(1)[0]
     percent = int(cnt / len(matches) * 100)
-    show_detail = f"比對到的數量結果：莊：{stat.get('莊',0)}筆  閒：{stat.get('閒',0)}筆  和：{stat.get('和',0)}筆"
-    return f"{most} ({percent}%)「{show_detail}」", f"{percent}%"
+    show_detail = f"莊:{stat.get('莊',0)} 閒:{stat.get('閒',0)} 和:{stat.get('和',0)}"
+    return f"{most} ({percent}%) [{show_detail}]"
 
-if os.path.exists(csv_file):
-    df = pd.read_csv(csv_file, encoding='utf-8-sig')
-else:
-    df = pd.DataFrame(columns=['advice'])
+# --- 主頁 UI ---
+st.markdown("### 1. 輸入牌面")
+col1, col2 = st.columns(2)
+with col1:
+    player_cards = st.text_input('閒家牌面 (1~13/JQK, 逗號分隔)', key='p_input')
+with col2:
+    banker_cards = st.text_input('莊家牌面 (1~13/JQK, 逗號分隔)', key='b_input')
 
-if len(df) > 0:
-    pred, rate = ai_predict_next_adviceN_only(csv_file, N=3)
-    auto_pred, auto_rate = ai_predict_next_adviceN_only(csv_file, N=6)
-    st.info(f"比對預測(3局)：{pred}")
-    st.info(f"比對預測(6局)：{auto_pred}")
-    st.write(f"比對正確率：{auto_rate}")
+if 'deck' not in st.session_state:
+    st.session_state['deck'] = init_deck()
 
-st.markdown("---")
-st.markdown("#### 歷史紀錄")
-last_record = st.session_state.get('last_record', None)
-if last_record:
-    st.write(f"已紀錄：{last_record}")
-else:
-    st.write("尚未紀錄新一局")
+if st.button('比對 / 預測'):
+    p_list = parse_cards(player_cards)
+    b_list = parse_cards(banker_cards)
+    p_point = calc_baccarat_point(p_list) if p_list else None
+    b_point = calc_baccarat_point(b_list) if b_list else None
 
-if st.button("匯出Excel"):
-    if os.path.exists(csv_file):
-        excel_out = csv_file.replace('.csv', '.xlsx')
-        if os.path.exists(excel_out):
-            os.remove(excel_out)
-        with pd.ExcelWriter(excel_out, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name="牌局記錄", index=False)
-        st.success(f"已匯出: {excel_out}")
+    if p_point is None or b_point is None:
+        st.error("請正確輸入莊/閒牌面")
+    else:
+        if p_point > b_point:
+            advice = '閒'
+        elif p_point < b_point:
+            advice = '莊'
+        else:
+            advice = '和'
 
-st.caption("手機/電腦可用．每鍵不同色，主操作永遠在眼前！")
+        # 寫入CSV
+        record = {
+            'player': p_point,
+            'player_cards': show_cards(p_list),
+            'banker': b_point,
+            'banker_cards': show_cards(b_list),
+            'final': abs(p_point-b_point),
+            'advice': advice,
+        }
+        file_exists = os.path.exists(CSV_FILE)
+        df = pd.DataFrame([record])
+        if file_exists:
+            df.to_csv(CSV_FILE, mode='a', index=False, header=False, encoding='utf-8-sig')
+        else:
+            df.to_csv(CSV_FILE, mode='w', index=False, header=True, encoding='utf-8-sig')
+        st.success(f"已記錄：閒 {p_point} [{show_cards(p_list)}]，莊 {b_point} [{show_cards(b_list)}]，結果 {advice}")
+
+        # 重新讀取紀錄
+        st.session_state['history'] = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+
+        # 牌池動態更新
+        deck = init_deck()
+        if 'history' in st.session_state:
+            for idx, row in st.session_state['history'].iterrows():
+                for c in parse_cards(row['player_cards']) + parse_cards(row['banker_cards']):
+                    deck[c] -= 1
+        st.session_state['deck'] = deck
+
+# 顯示剩餘牌池
+st.markdown("### 2. 剩餘牌池")
+st.info(deck_str(st.session_state['deck']))
+
+# 預測顯示
+if os.path.exists(CSV_FILE):
+    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+    pred_3 = ai_predict_next_adviceN_only(df, 3)
+    pred_6 = ai_predict_next_adviceN_only(df, 6)
+    st.markdown(f"#### 比對預測 (3局)： {pred_3}")
+    st.markdown(f"#### 比對預測 (6局)： {pred_6}")
+
+# 歷史紀錄
+st.markdown("### 3. 歷史紀錄")
+if os.path.exists(CSV_FILE):
+    history = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+    st.dataframe(history, use_container_width=True)
+    # 匯出下載
+    st.download_button("下載 CSV", data=history.to_csv(index=False), file_name="ai_train_history.csv")
+    history.to_excel("ai_train_history.xlsx", index=False)
+    with open("ai_train_history.xlsx", "rb") as f:
+        st.download_button("下載 Excel", data=f, file_name="ai_train_history.xlsx")
+
+# 牌池重設
+if st.button('重設牌池 / 歷史'):
+    st.session_state['deck'] = init_deck()
+    if os.path.exists(CSV_FILE):
+        os.remove(CSV_FILE)
+    st.experimental_rerun()
