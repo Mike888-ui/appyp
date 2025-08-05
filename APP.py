@@ -88,10 +88,25 @@ for i, col in enumerate(cols):
             _add_cur = True
         else:
             st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
-        if i < 4:
-            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i]))
+
+        if i < 3:
+            if st.button(btn_labels[i], key=btn_keys[i]):
+                st.session_state['cur_result'] = btn_labels[i]
+                st.experimental_rerun()
+        elif i == 3:
+            if st.button(btn_labels[i], key=btn_keys[i]):
+                st.session_state['cur_result'] = ""
+                st.experimental_rerun()
         else:
-            btn_clicks.append(st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result))
+            if st.button(btn_labels[i], key=btn_keys[i], disabled=not cur_result):
+                # 執行紀錄
+                with open(csv_file, 'a', encoding='utf-8-sig', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([cur_result])
+                st.session_state['last_record'] = cur_result
+                st.session_state['cur_result'] = ""
+                st.success(f"已紀錄：{cur_result}")
+                st.experimental_rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 其它顯示區不變
