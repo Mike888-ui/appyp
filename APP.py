@@ -99,22 +99,16 @@ def get_counts_and_diff(df, N=3):
     max_diff = max(counts.values()) - min(counts.values()) if matches else 0
     return counts, diff, max_diff
 
-# --------- 5. 比對 / 預測 按鍵（final欄位顯示三局六局比對明細） ---------
+# --------- 5. 比對 / 預測 按鍵 ---------
 if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
     if not st.session_state["curr_result"]:
         st.error("請先選擇本局結果（莊/閒/和）")
     else:
         # 新增紀錄
         if 'history' in st.session_state and not st.session_state['history'].empty:
-            # 三局
             pred_3 = ai_predict_next_adviceN_only(st.session_state['history'], 3)
             cnt3, diff3, max_diff3 = get_counts_and_diff(st.session_state['history'], 3)
-            final_3 = f"3局: {pred_3}｜莊-閒={cnt3['莊']}-{cnt3['閒']}={diff3}，最大差值={max_diff3}，明細: 莊:{cnt3['莊']} 閒:{cnt3['閒']} 和:{cnt3['和']}"
-            # 六局
-            pred_6 = ai_predict_next_adviceN_only(st.session_state['history'], 6)
-            cnt6, diff6, max_diff6 = get_counts_and_diff(st.session_state['history'], 6)
-            final_6 = f"6局: {pred_6}｜莊-閒={cnt6['莊']}-{cnt6['閒']}={diff6}，最大差值={max_diff6}，明細: 莊:{cnt6['莊']} 閒:{cnt6['閒']} 和:{cnt6['和']}"
-            final_text = final_3 + "\n" + final_6
+            final_text = f"{pred_3}｜莊-閒={cnt3['莊']}-{cnt3['閒']}={diff3}，最大差值={max_diff3}"
         else:
             final_text = ""
         new_record = {
