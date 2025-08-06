@@ -118,13 +118,13 @@ if 'history' not in st.session_state:
         st.session_state['history'] = pd.DataFrame(columns=["advice", "final", "time"])
 
 # --------- 6. 預測功能 ---------
-st.markdown("### 2. 比對預測")
+st.markdown("### 2. 比對")
 history = st.session_state['history']
 if not history.empty:
     pred_3 = ai_predict_next_adviceN_only(history, 3)
     pred_6 = ai_predict_next_adviceN_only(history, 6)
-    st.markdown(f"#### 比對預測 (3局)： {pred_3}")
-    st.markdown(f"#### 比對預測 (6局)： {pred_6}")
+    st.markdown(f"#### 比對 (3局)： {pred_3}")
+    st.markdown(f"#### 比對 (6局)： {pred_6}")
 else:
     st.info("目前無紀錄")
 
