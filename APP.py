@@ -106,9 +106,9 @@ if st.button("比對 / 預測", key="compare_btn", use_container_width=True):
     else:
         # 新增紀錄
         if 'history' in st.session_state and not st.session_state['history'].empty:
-            pred_3 = ai_predict_next_adviceN_only(st.session_state['history'], 3)
-            cnt3, diff3, max_diff3 = get_counts_and_diff(st.session_state['history'], 3)
-            final_text = f"{pred_3}｜莊-閒={cnt3['莊']}-{cnt3['閒']}={diff3}，最大差值={max_diff3}"
+            cnt3, _, _ = get_counts_and_diff(st.session_state['history'], 3)
+            cnt6, _, _ = get_counts_and_diff(st.session_state['history'], 6)
+            final_text = f"3局: 莊:{cnt3['莊']} 閒:{cnt3['閒']} 和:{cnt3['和']}，6局: 莊:{cnt6['莊']} 閒:{cnt6['閒']} 和:{cnt6['和']}"
         else:
             final_text = ""
         new_record = {
@@ -146,22 +146,20 @@ for col in ["advice", "final", "time"]:
         st.session_state['history'][col] = ""
 st.session_state['history'] = st.session_state['history'][["advice", "final", "time"]]
 
-# --------- 7. 比對預測區（顯示明細與差值） ---------
+# --------- 7. 比對預測區（僅顯示分布與原有方式） ---------
 st.markdown("### 2. 比對預測")
 history = st.session_state['history']
 if not history.empty:
     pred_3 = ai_predict_next_adviceN_only(history, 3)
     pred_6 = ai_predict_next_adviceN_only(history, 6)
-    cnt3, diff3, max_diff3 = get_counts_and_diff(history, 3)
-    cnt6, diff6, max_diff6 = get_counts_and_diff(history, 6)
+    cnt3, _, _ = get_counts_and_diff(history, 3)
+    cnt6, _, _ = get_counts_and_diff(history, 6)
     st.markdown(
-        f"#### 比對預測 (3局)： {pred_3}｜莊-閒差值={cnt3['莊']}-{cnt3['閒']}={diff3}，最大差值={max_diff3}"
-        + f"<br>明細：莊:{cnt3['莊']} 閒:{cnt3['閒']} 和:{cnt3['和']}",
+        f"#### 比對預測 (3局)： {pred_3}<br>明細：莊:{cnt3['莊']} 閒:{cnt3['閒']} 和:{cnt3['和']}",
         unsafe_allow_html=True
     )
     st.markdown(
-        f"#### 比對預測 (6局)： {pred_6}｜莊-閒差值={cnt6['莊']}-{cnt6['閒']}={diff6}，最大差值={max_diff6}"
-        + f"<br>明細：莊:{cnt6['莊']} 閒:{cnt6['閒']} 和:{cnt6['和']}",
+        f"#### 比對預測 (6局)： {pred_6}<br>明細：莊:{cnt6['莊']} 閒:{cnt6['閒']} 和:{cnt6['和']}",
         unsafe_allow_html=True
     )
 else:
